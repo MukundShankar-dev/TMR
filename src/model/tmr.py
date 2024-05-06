@@ -89,6 +89,12 @@ class TMR(TEMOS):
         text_x_dict = batch["text_x_dict"]
         motion_x_dict = batch["motion_x_dict"]
 
+        positive_sample_x_dict = batch["positive_sample_x_dict"]
+        pos_mask = positive_sample_x_dict["mask"]
+
+        negative_sample_x_dict = batch["negative_sample_x_dict"]
+        neg_mask = negative_sample_x_dict["mask"]
+
         mask = motion_x_dict["mask"]
         ref_motions = motion_x_dict["x"]
 
@@ -100,6 +106,9 @@ class TMR(TEMOS):
 
         # motion -> motion
         m_motions, m_latents, m_dists = self(motion_x_dict, mask=mask, return_all=True)
+
+        _, pos_latents, _ = self(positive_sample_x_dict, mask=pos_mask, return_all=True)
+        _, neg_latents, _ = self(negative_sample_x_dict, mask=neg_mask, return_all=True)
 
         # Store all losses
         losses = {}
@@ -133,6 +142,8 @@ class TMR(TEMOS):
         # TMR: adding the contrastive loss
         losses["contrastive"] = self.contrastive_loss_fn(t_latents, m_latents, sent_emb)
 
+        losses["dtw"] = self.dtw_loss_fn(m_latents, pos_latents, neg_latents)
+        
         # Weighted average of the losses
         losses["loss"] = sum(
             self.lmd[x] * val for x, val in losses.items() if x in self.lmd

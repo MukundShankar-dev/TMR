@@ -89,20 +89,13 @@ import torch
 import torch.nn as nn
 import random
 
-# Look at evaluation metrics from TMR paper
-    # How many testing samples?
-    # What do metrics mean?
-    # Run some iterations, make sure triplet loss is going down. Integrate wandb
+# Run some iterations, make sure triplet loss is going down. Integrate wandb
 
 class DTWLoss:
-    def __init__(self, threshold):
+    def __init__(self):
         pass
 
-    def __call__(self, batch):
+    def __call__(self, anchor_latent, positive_latent, negative_latent):
         triplet_loss = 0
-        losses = []
-        
         triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2, eps=1e-7)
-
-        
-        return 
+        return triplet_loss(anchor_latent, positive_latent, negative_latent)
