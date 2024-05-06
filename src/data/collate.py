@@ -46,8 +46,8 @@ def collate_text_motion(lst_elements: List, *, device: Optional[str] = None) -> 
     one_el = lst_elements[0]
     keys = one_el.keys()
 
-    x_dict_keys = [key for key in keys if "x_dict" in key]
-    other_keys = [key for key in keys if "x_dict" not in key]
+    x_dict_keys = [key for key in keys if "x_dict" in key]          # all the keys where "x_dict is present"
+    other_keys = [key for key in keys if "x_dict" not in key]       # other keys
 
     batch = {key: default_collate([x[key] for x in lst_elements]) for key in other_keys}
     for key, val in batch.items():

@@ -96,95 +96,13 @@ import random
 
 class DTWLoss:
     def __init__(self, threshold):
-        f = open("/vulcanscratch/mukunds/downloads/TMR/samples_200.json")
-        self.samples = json.load(f)
-        self.threshold = threshold
-
-
-    def get_samples(self, keyid):
-        # print("in get_samples function...")
-        to_process = self.samples[keyid]
-        anchor_motion_path = to_process['anchor_motion_path']
-        len_pos_samples = len(to_process['positive_sample_keyids'])
-        len_neg_samples = len(to_process['negative_sample_keyids'])
-
-        rand_pos = random.randint(0, len_pos_samples - 1)
-        rand_neg = random.randint(0, len_neg_samples - 1)
-
-        positive_sample_keyid = to_process['positive_sample_keyids'][rand_pos]
-        positive_sample_distance = to_process['positive_sample_distances'][rand_pos]
-        positive_sample_path = to_process['positive_sample_motion_paths'][rand_pos]
-
-        # print(f"positive keyid: {positive_sample_keyid}, dist: {positive_sample_distance}, path: {positive_sample_path}")
-
-        negative_sample_keyid = to_process['negative_sample_keyids'][rand_neg]
-        negative_sample_distance = to_process['negative_sample_distances'][rand_neg]
-        negative_sample_path = to_process['negative_sample_motion_paths'][rand_neg]
-        
-        # print(f"negative keyid: {negative_sample_keyid}, dist: {negative_sample_distance}, path: {negative_sample_path}")
-
-        return {
-            "anchor_motion_path": anchor_motion_path,
-
-            "positive_sample_keyid": positive_sample_keyid,
-            "positive_sample_distance": positive_sample_distance,
-            "positive_sample_path": positive_sample_path,
-            
-            "negative_sample_keyid": negative_sample_keyid,
-            "negative_sample_distance": negative_sample_distance,
-            "negative_sample_path": negative_sample_path
-        }
-        
-
-    def pad_array(self, array, max_length):
-        padding_needed = max_length - array.shape[0]
-        if padding_needed > 0:
-            return np.pad(array, pad_width=((0, padding_needed), (0, 0)), mode='constant', constant_values=0)
-        else:
-            return array
+        pass
 
     def __call__(self, batch):
-        # triplet_loss = 0
+        triplet_loss = 0
         losses = []
         
         triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2, eps=1e-7)
 
-        for keyid in batch['keyids']:
-            try:
-                samples = self.get_samples(keyid)
-            except:
-                continue
-
-            anchor_motion_path = samples['anchor_motion_path']
-            # print(f"anchor motion path: {anchor_motion_path}")
-            positive_motion_path = samples['positive_sample_path']
-            # print(f"positive sample path: {positive_motion_path}")
-            negative_motion_path = samples['negative_sample_path']
-            # print(f"negative sample path: {negative_motion_path}")
-
-            base_path = '/vulcanscratch/mukunds/downloads/TMR/datasets/motions/guoh3dfeats/'
-            
-            # try:
-            anchor_motion = np.load(f'{base_path}{anchor_motion_path}.npy')
-            positive_motion = np.load(f'{base_path}{positive_motion_path}.npy')
-            negative_motion = np.load(f'{base_path}{negative_motion_path}.npy')
-            # except:
-                # continue
-
-            max_length = max(anchor_motion.shape[0], positive_motion.shape[0], negative_motion.shape[0])
-
-            anchor_motion_padded = self.pad_array(anchor_motion, max_length)
-            positive_motion_padded = self.pad_array(positive_motion, max_length)
-            negative_motion_padded = self.pad_array(negative_motion, max_length)
-
-            # anchor_pos_L2 = np.linalg.norm(anchor_motion_padded - positive_motion_padded)
-            # anchor_neg_L2 = np.linalg.norm(anchor_motion_padded - negative_motion_padded)
-
-            anchor_motion_padded = torch.from_numpy(anchor_motion_padded)
-            positive_motion_padded = torch.from_numpy(positive_motion_padded)
-            negative_motion_padded = torch.from_numpy(negative_motion_padded)
-
-            if torch.isnan(anchor_motion_padded).any() or torch.isnan(positive_motion_padded).any() or torch.isnan(negative_motion_padded).any():
-                continue
-            losses.append(triplet_loss(anchor_motion_padded, positive_motion_padded, negative_motion_padded).item())
-        return np.mean(losses).item()
+        
+        return 

@@ -2,6 +2,7 @@ import os
 import codecs as cs
 import orjson  # loading faster than json
 import json
+import random
 
 import numpy as np
 from torch.utils.data import Dataset
@@ -21,6 +22,11 @@ def read_split(path, split):
 
 def load_annotations(path, name="annotations.json"):
     json_path = os.path.join(path, name)
+    with open(json_path, "rb") as ff:
+        return orjson.loads(ff.read())
+
+def load_samples():
+    json_path = "/vulcanscratch/mukunds/downloads/TMR/samples_200.json"
     with open(json_path, "rb") as ff:
         return orjson.loads(ff.read())
 
@@ -52,6 +58,8 @@ class TextMotionDataset(Dataset):
         self.min_seconds = min_seconds
         self.max_seconds = max_seconds
 
+        self.samples = load_samples()
+
         # remove too short or too long annotations
         self.annotations = load_annotations(path)
 
@@ -71,6 +79,30 @@ class TextMotionDataset(Dataset):
 
     def __len__(self):
         return len(self.keyids)
+
+    def get_positive_sample(self, keyid):
+        pos_samples = self.samples[keyid]["positive_sample_keyids"]
+        num_samples = len(pos_samples)
+        idx = random.randint(0, num_samples-1)
+        motion_keyid = pos_samples[idx]
+        pos_motion = self.motion_loader(
+            path=self.annotations[motion_keyid]["path"],
+            start=self.annotations[motion_keyid]["annotations"][0]["start"],
+            end=self.annotations[motion_keyid]["annotations"][0]["end"],
+        )
+        return pos_motion
+
+    def get_negative_sample(self, keyid):
+        neg_samples = self.samples[keyid]["negative_sample_keyids"]
+        num_samples = len(neg_samples)
+        idx = random.randint(0, num_samples-1)
+        motion_keyid = neg_samples[idx]
+        neg_motion = self.motion_loader(
+            path=self.annotations[motion_keyid]["path"],
+            start=self.annotations[motion_keyid]["annotations"][0]["start"],
+            end=self.annotations[motion_keyid]["annotations"][0]["end"],
+        )
+        return neg_motion
 
     def __getitem__(self, index):
         keyid = self.keyids[index]
@@ -95,12 +127,17 @@ class TextMotionDataset(Dataset):
         )
         sent_emb = self.text_to_sent_emb(text)
 
+        positive_sample = self.get_positive_sample(keyid)
+        negative_sample = self.get_negative_sample(keyid)
+
         output = {
             "motion_x_dict": motion_x_dict,
             "text_x_dict": text_x_dict,
             "text": text,
             "keyid": keyid,
             "sent_emb": sent_emb,
+            "positive_sample_x_dict": positive_sample,
+            "negative_sample_x_dict": negative_sample
         }
         return output
 

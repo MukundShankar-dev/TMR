@@ -6,7 +6,7 @@ run_dir: outputs/${hydra:runtime.choices.model}_${hydra:runtime.choices.data}_${
 dataloader:
   _target_: torch.utils.data.DataLoader
   batch_size: 32
-  num_workers: 8
+  num_workers: 4
 
 defaults:
   - data: humanml3d
