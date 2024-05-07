@@ -6,7 +6,7 @@ from torch import Tensor
 from pytorch_lightning import LightningModule
 
 from src.model.losses import KLLoss
-
+import wandb
 
 def length_to_mask(length: List[int], device: torch.device = None) -> Tensor:
     if device is None:
@@ -217,6 +217,7 @@ class TEMOS(LightningModule):
         bs = len(batch["motion_x_dict"]["x"])
         losses = self.compute_loss(batch)
 
+        to_log = {}
         for loss_name in sorted(losses):
             loss_val = losses[loss_name]
             self.log(
@@ -226,6 +227,8 @@ class TEMOS(LightningModule):
                 on_step=True,
                 batch_size=bs,
             )
+            to_log[f"train_{loss_name}"] = loss_val
+        wandb.log(to_log)
         return losses["loss"]
 
     def validation_step(self, batch: Dict, batch_idx: int) -> Tensor:

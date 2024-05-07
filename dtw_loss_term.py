@@ -81,13 +81,7 @@
 #             # losses.append(anchor_pos_L2 - anchor_neg_L2)
         
 #         return np.mean(losses).item()
-
-import pandas as pd
-import numpy as np
-import json
-import torch
 import torch.nn as nn
-import random
 
 # Run some iterations, make sure triplet loss is going down. Integrate wandb
 

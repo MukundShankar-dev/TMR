@@ -1,0 +1,1 @@
+{"train_contrastive": 2.8262557983398438, "train_dtw": 0.287381649017334, "train_kl": 6.655918121337891, "train_latent": 1.1213983297348022, "train_loss": 0.8039430379867554, "train_recons": 0.5212396383285522, "_timestamp": 1715041529.788021, "_runtime": 113.03610801696777, "_step": 413, "_wandb": {"runtime": 112}}

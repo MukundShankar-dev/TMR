@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 
@@ -54,3 +55,14 @@ class InfoNCE_with_filtering:
 
     def __repr__(self):
         return f"Constrastive(temp={self.temp})"
+
+# Run some iterations, make sure triplet loss is going down. Integrate wandb
+
+class DTWLoss:
+    def __init__(self):
+        pass
+
+    def __call__(self, anchor_latent, positive_latent, negative_latent):
+        triplet_loss = 0
+        triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2, eps=1e-7)
+        return triplet_loss(anchor_latent, positive_latent, negative_latent)

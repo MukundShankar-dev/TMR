@@ -5,7 +5,9 @@ import torch
 import torch.nn as nn
 from .temos import TEMOS
 from .losses import InfoNCE_with_filtering
+from .losses import DTWLoss
 from .metrics import all_contrastive_metrics
+import wandb
 
 
 # x.T will be deprecated in pytorch
@@ -55,7 +57,8 @@ class TMR(TEMOS):
         vae: bool,
         fact: Optional[float] = None,
         sample_mean: Optional[bool] = False,
-        lmd: Dict = {"recons": 1.0, "latent": 1.0e-5, "kl": 1.0e-5, "contrastive": 0.1},
+        # lmd: Dict = {"recons": 1.0, "latent": 1.0e-5, "kl": 1.0e-5, "contrastive": 0.1},
+        lmd: Dict = {"recons": 1.0, "latent": 1.0e-5, "kl": 1.0e-5, "contrastive": 0.1, "dtw": 0.1},
         lr: float = 1e-4,
         temperature: float = 0.7,
         threshold_selfsim: float = 0.80,
@@ -73,11 +76,16 @@ class TMR(TEMOS):
             lr=lr,
         )
 
+        wandb.init(entity="mukunds", project="tmr_with_dtw", name="(possibly) fixed DTW loss", config={"lmd": lmd, "lr": lr, "temp": temperature,
+                                                                                                        "threshold_selfsim": threshold_selfsim})
+
         # adding the contrastive loss
         self.contrastive_loss_fn = InfoNCE_with_filtering(
             temperature=temperature, threshold_selfsim=threshold_selfsim
         )
         self.threshold_selfsim_metrics = threshold_selfsim_metrics
+
+        self.dtw_loss_fn = DTWLoss()
 
         # store validation values to compute retrieval metrics
         # on the whole validation set
@@ -152,7 +160,8 @@ class TMR(TEMOS):
         # Used for the validation step
         if return_all:
             return losses, t_latents, m_latents
-
+        
+        wandb.log(losses)
         return losses
 
     def validation_step(self, batch: Dict, batch_idx: int) -> Tensor:
@@ -164,6 +173,8 @@ class TMR(TEMOS):
         self.validation_step_m_latents.append(m_latents)
         self.validation_step_sent_emb.append(batch["sent_emb"])
 
+        to_log={}
+
         for loss_name in sorted(losses):
             loss_val = losses[loss_name]
             self.log(
@@ -173,7 +184,9 @@ class TMR(TEMOS):
                 on_step=True,
                 batch_size=bs,
             )
+            to_log[f"val_{loss_name}"] = loss_val
 
+        wandb.log(to_log)
         return losses["loss"]
 
     def on_validation_epoch_end(self):
