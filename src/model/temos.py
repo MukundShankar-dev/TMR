@@ -45,9 +45,10 @@ class TEMOS(LightningModule):
         text_encoder: nn.Module,
         motion_decoder: nn.Module,
         vae: bool,
+        lmd: Dict,
         fact: Optional[float] = None,
         sample_mean: Optional[bool] = False,
-        lmd: Dict = {"recons": 1.0, "latent": 1.0e-5, "kl": 1.0e-5},
+        # lmd: Dict = {"recons": 1.0, "latent": 1.0e-5, "kl": 1.0e-5},
         lr: float = 1e-4,
     ) -> None:
         super().__init__()
@@ -228,7 +229,12 @@ class TEMOS(LightningModule):
                 batch_size=bs,
             )
             to_log[f"train_{loss_name}"] = loss_val
-        wandb.log(to_log)
+        
+        try:
+            wandb.log(to_log)
+        except:
+            pass
+
         return losses["loss"]
 
     def validation_step(self, batch: Dict, batch_idx: int) -> Tensor:

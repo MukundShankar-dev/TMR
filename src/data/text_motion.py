@@ -43,6 +43,7 @@ class TextMotionDataset(Dataset):
         max_seconds: float = 10.0,
         preload: bool = True,
         tiny: bool = False,
+        use_dtw: bool = True,
     ):
         if tiny:
             split = split + "_tiny"
@@ -58,7 +59,9 @@ class TextMotionDataset(Dataset):
         self.min_seconds = min_seconds
         self.max_seconds = max_seconds
 
-        self.samples = load_samples()
+        self.use_dtw = use_dtw
+        if self.use_dtw:
+            self.samples = load_samples()
 
         # remove too short or too long annotations
         self.annotations = load_annotations(path)
@@ -70,6 +73,7 @@ class TextMotionDataset(Dataset):
             self.annotations = self.filter_annotations(self.annotations)
 
         self.is_training = split == "train"
+        self.is_val = split == "val"
         self.keyids = [keyid for keyid in self.keyids if keyid in self.annotations]
         self.nfeats = self.motion_loader.nfeats
 
@@ -126,19 +130,37 @@ class TextMotionDataset(Dataset):
             end=annotation["end"],
         )
         sent_emb = self.text_to_sent_emb(text)
+        
+        if self.use_dtw:
+            if self.is_training or self.is_val:
+                positive_sample = self.get_positive_sample(keyid)
+                negative_sample = self.get_negative_sample(keyid)
 
-        positive_sample = self.get_positive_sample(keyid)
-        negative_sample = self.get_negative_sample(keyid)
-
-        output = {
-            "motion_x_dict": motion_x_dict,
-            "text_x_dict": text_x_dict,
-            "text": text,
-            "keyid": keyid,
-            "sent_emb": sent_emb,
-            "positive_sample_x_dict": positive_sample,
-            "negative_sample_x_dict": negative_sample
-        }
+                output = {
+                    "motion_x_dict": motion_x_dict,
+                    "text_x_dict": text_x_dict,
+                    "text": text,
+                    "keyid": keyid,
+                    "sent_emb": sent_emb,
+                    "positive_sample_x_dict": positive_sample,
+                    "negative_sample_x_dict": negative_sample
+                }
+            else:
+                output = {
+                "motion_x_dict": motion_x_dict,
+                "text_x_dict": text_x_dict,
+                "text": text,
+                "keyid": keyid,
+                "sent_emb": sent_emb,
+            }
+        else:
+            output = {
+                "motion_x_dict": motion_x_dict,
+                "text_x_dict": text_x_dict,
+                "text": text,
+                "keyid": keyid,
+                "sent_emb": sent_emb,
+            }
         return output
 
     def filter_annotations(self, annotations):
