@@ -9,9 +9,11 @@ lmd:
   latent: 1.0e-5
   kl: 1.0e-5
   contrastive: 0.1
-  dtw: 0.25
+  dtw: 0.1
 
 lr: 1e-4
 temperature: 0.1
 threshold_selfsim: 0.80
 threshold_selfsim_metrics: 0.95
+log_wandb: True
+use_dtw: False

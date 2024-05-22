@@ -64,5 +64,9 @@ class DTWLoss:
 
     def __call__(self, anchor_latent, positive_latent, negative_latent):
         triplet_loss = 0
+
+        # x_logits = torch.nn.functional.normalize(x, dim=-1)
+        # y_logits = torch.nn.functional.normalize(y, dim=-1)
+
         triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2, eps=1e-7)
         return triplet_loss(anchor_latent, positive_latent, negative_latent)

@@ -67,12 +67,14 @@
             "latent": 1e-05,
             "kl": 1e-05,
             "contrastive": 0.1,
-            "dtw": 0.5
+            "dtw": 0.1
         },
         "lr": 0.0001,
         "temperature": 0.1,
         "threshold_selfsim": 0.8,
-        "threshold_selfsim_metrics": 0.95
+        "threshold_selfsim_metrics": 0.95,
+        "log_wandb": true,
+        "use_dtw": false
     },
     "trainer": {
         "_target_": "pytorch_lightning.Trainer",

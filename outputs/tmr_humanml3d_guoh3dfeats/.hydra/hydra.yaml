@@ -117,14 +117,15 @@ hydra:
   overrides:
     hydra:
     - hydra.mode=RUN
-    task: []
+    task:
+    - model.use_dtw=False
   job:
-    name: retrieval
+    name: train
     chdir: null
-    override_dirname: ''
+    override_dirname: model.use_dtw=False
     id: ???
     num: ???
-    config_name: retrieval
+    config_name: train
     env_set: {}
     env_copy: []
     config:
@@ -151,6 +152,9 @@ hydra:
       provider: schema
     output_dir: /vulcanscratch/mukunds/downloads/TMR/outputs/tmr_humanml3d_guoh3dfeats
     choices:
+      model: tmr
+      data: humanml3d
+      data/motion_loader: guoh3dfeats
       hydra/env: default
       hydra/callbacks: null
       hydra/job_logging: tqdm

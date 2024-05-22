@@ -94,7 +94,7 @@ class TMR(TEMOS):
         self.log_wandb = log_wandb
 
         if self.log_wandb:
-            wandb.init(entity="mukundshankar", project="tmr_with_dtw", name="With DTW Loss", config=config_dict)
+            wandb.init(entity="mukundshankar", project="tmr_with_dtw", name="dtw weight: 0.1", config=config_dict)
 
         self.use_dtw = use_dtw
 
@@ -230,8 +230,11 @@ class TMR(TEMOS):
             threshold=self.threshold_selfsim_metrics,
         )
 
+        to_log ={}
+
         for loss_name in sorted(contrastive_metrics):
             loss_val = contrastive_metrics[loss_name]
+            to_log[f"val_{loss_name}"] = loss_val
             self.log(
                 f"val_{loss_name}_epoch",
                 loss_val,
@@ -239,6 +242,8 @@ class TMR(TEMOS):
                 on_step=False,
             )
 
+        if self.log_wandb:
+            wandb.log(to_log)
         self.validation_step_t_latents.clear()
         self.validation_step_m_latents.clear()
         self.validation_step_sent_emb.clear()
