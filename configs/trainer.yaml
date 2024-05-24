@@ -24,6 +24,7 @@ trainer:
     - _target_: src.callback.progress.ProgressLogger
       precision: 3
     - _target_: src.callback.tqdmbar.TQDMProgressBar
+    - _target_: src.callback.all_metrics.AllMetricsLogger
 
   logger:
     _target_: src.logger.csv.CSVLogger

@@ -9,17 +9,22 @@ from .losses import DTWLoss
 from .metrics import all_contrastive_metrics
 import wandb
 
+# from .all_val_metrics import retrieval
+from ..config import read_config
+from ..data.collate import collate_text_motion
+from omegaconf import DictConfig
+import numpy as np
+from hydra.utils import instantiate
+
 # x.T will be deprecated in pytorch
 def transpose(x):
     return x.permute(*torch.arange(x.ndim - 1, -1, -1))
-
 
 def get_sim_matrix(x, y):
     x_logits = torch.nn.functional.normalize(x, dim=-1)
     y_logits = torch.nn.functional.normalize(y, dim=-1)
     sim_matrix = x_logits @ transpose(y_logits)
     return sim_matrix
-
 
 # Scores are between 0 and 1
 def get_score_matrix(x, y):
@@ -65,6 +70,7 @@ class TMR(TEMOS):
         log_wandb: bool = True,
         use_dtw: bool = True
     ) -> None:
+        
         # Initialize module like TEMOS
         super().__init__(
             motion_encoder=motion_encoder,
@@ -78,7 +84,6 @@ class TMR(TEMOS):
         )
 
         self.lmd = lmd
-
         config_dict = {
             "lmd": lmd,
             "lr": lr,
@@ -89,12 +94,11 @@ class TMR(TEMOS):
             "use_dtw": use_dtw,
             "vae": vae,
             "epochs": 500,
-
         }
         self.log_wandb = log_wandb
 
         if self.log_wandb:
-            wandb.init(entity="mukundshankar", project="tmr_with_dtw", name="dtw weight: 0.1", config=config_dict)
+            wandb.init(entity="mukundshankar", project="tmr_with_dtw", name="Vanilla model (correct logs)", config=config_dict)
 
         self.use_dtw = use_dtw
 
@@ -112,6 +116,20 @@ class TMR(TEMOS):
         self.validation_step_t_latents = []
         self.validation_step_m_latents = []
         self.validation_step_sent_emb = []
+
+        cfg = read_config("/vulcanscratch/mukunds/downloads/TMR/outputs/tmr_humanml3d_guoh3dfeats")
+        
+        self.val_datasets = {}
+        self.protocols = ["normal", "threshold", "guo", "nsim"]
+        for protocol in self.protocols:
+            if protocol not in self.val_datasets:
+                if protocol in ["normal", "threshold", "guo"]:
+                    dataset = instantiate(cfg.data, split="test")
+                    self.val_datasets.update(
+                        {key: dataset for key in ["normal", "threshold", "guo"]}
+                    )
+                elif protocol == "nsim":
+                    self.val_datasets[protocol] = instantiate(cfg.data, split="nsim_test")
 
     def compute_loss(self, batch: Dict, return_all=False) -> Dict:
         text_x_dict = batch["text_x_dict"]
@@ -179,7 +197,6 @@ class TMR(TEMOS):
             self.lmd[x] * val for x, val in losses.items() if x in self.lmd
         )
 
-
         # Used for the validation step
         if return_all:
             return losses, t_latents, m_latents
@@ -230,11 +247,11 @@ class TMR(TEMOS):
             threshold=self.threshold_selfsim_metrics,
         )
 
-        to_log ={}
+        # to_log ={}
 
         for loss_name in sorted(contrastive_metrics):
             loss_val = contrastive_metrics[loss_name]
-            to_log[f"val_{loss_name}"] = loss_val
+            # to_log[f"val_{loss_name}"] = loss_val
             self.log(
                 f"val_{loss_name}_epoch",
                 loss_val,
@@ -242,8 +259,123 @@ class TMR(TEMOS):
                 on_step=False,
             )
 
-        if self.log_wandb:
-            wandb.log(to_log)
+        # if self.log_wandb:
+            # wandb.log(to_log)
+
         self.validation_step_t_latents.clear()
         self.validation_step_m_latents.clear()
         self.validation_step_sent_emb.clear()
+
+    def compute_sim_matrix(self, dataset, keyids, batch_size=256):
+        device = self.device
+        nsplit = int(np.ceil(len(dataset) / batch_size))
+        all_data = [dataset.load_keyid(keyid) for keyid in keyids]
+        all_data_splitted = np.array_split(all_data, nsplit)
+
+        # by batch (can be too costly on cuda device otherwise)
+        latent_texts = []
+        latent_motions = []
+        sent_embs = []
+        for data in all_data_splitted:
+            batch = collate_text_motion(data, device=device)
+
+            # Text is already encoded
+            text_x_dict = batch["text_x_dict"]
+            motion_x_dict = batch["motion_x_dict"]
+            sent_emb = batch["sent_emb"]
+
+            # Encode both motion and text
+            latent_text = self.encode(text_x_dict, sample_mean=True)
+            latent_motion = self.encode(motion_x_dict, sample_mean=True)
+
+            latent_texts.append(latent_text)
+            latent_motions.append(latent_motion)
+            sent_embs.append(sent_emb)
+
+        latent_texts = torch.cat(latent_texts)
+        latent_motions = torch.cat(latent_motions)
+        sent_embs = torch.cat(sent_embs)
+        sim_matrix = get_sim_matrix(latent_texts, latent_motions)
+        returned = {
+            "sim_matrix": sim_matrix.cpu().numpy(),
+            "sent_emb": sent_embs.cpu().numpy(),
+        }
+        return returned
+
+    def calculate_all_metrics(self):
+        batch_size = 256
+        results = {}
+        metrics_to_log = {}
+        for protocol in self.protocols:
+            dataset = self.val_datasets[protocol]
+            if protocol not in results:
+                if protocol in ["normal", "threshold"]:
+                    res = self.compute_sim_matrix(
+                    dataset, dataset.keyids, batch_size=batch_size
+                    )
+                    results.update({key: res for key in ["normal", "threshold"]})
+                elif protocol == "nsim":
+                    res = self.compute_sim_matrix(
+                        dataset, dataset.keyids, batch_size=batch_size
+                    )
+                    results[protocol] = res
+                elif protocol == "guo":
+                    keyids = sorted(dataset.keyids)
+                    N = len(keyids)
+
+                    # make batches of 32
+                    idx = np.arange(N)
+                    np.random.seed(0)
+                    np.random.shuffle(idx)
+                    idx_batches = [
+                        idx[32 * i : 32 * (i + 1)] for i in range(len(keyids) // 32)
+                    ]
+
+                    # split into batches of 32
+                    # batched_keyids = [ [32], [32], [...]]
+                    results["guo"] = [
+                        self.compute_sim_matrix(
+                            dataset,
+                            np.array(keyids)[idx_batch],
+                            batch_size=batch_size,
+                        )
+                        for idx_batch in idx_batches
+                    ]
+            result = results[protocol]
+
+            if protocol == "guo":
+                all_metrics = []
+                for x in result:
+                    sim_matrix = x["sim_matrix"]
+                    metrics = all_contrastive_metrics(sim_matrix, rounding=None)
+                    all_metrics.append(metrics)
+
+                avg_metrics = {}
+                for key in all_metrics[0].keys():
+                    avg_metrics[key] = round(
+                        float(np.mean([metrics[key] for metrics in all_metrics])), 2
+                    )
+
+                metrics = avg_metrics
+                protocol_name = protocol
+            else:
+                sim_matrix = result["sim_matrix"]
+
+                protocol_name = protocol
+                if protocol == "threshold":
+                    emb = result["sent_emb"]
+                    threshold = 0.95
+                    protocol_name = protocol + f"_{threshold}"
+                else:
+                    emb, threshold = None, None
+                metrics = all_contrastive_metrics(sim_matrix, emb, threshold=threshold)
+
+            # metric_name = protocol_name
+            # metrics_to_log[metric_name] = metrics
+            # path = os.path.join(save_dir, metric_name)
+            metrics_to_log[protocol] = metrics
+        
+        if self.log_wandb:
+            wandb.log(metrics_to_log)
+        
+        return

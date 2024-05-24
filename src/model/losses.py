@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 # For reference
 # https://stats.stackexchange.com/questions/7440/kl-divergence-between-two-univariate-gaussians
 # https://pytorch.org/docs/stable/_modules/torch/distributions/kl.html#kl_divergence
@@ -55,8 +54,6 @@ class InfoNCE_with_filtering:
 
     def __repr__(self):
         return f"Constrastive(temp={self.temp})"
-
-# Run some iterations, make sure triplet loss is going down. Integrate wandb
 
 class DTWLoss:
     def __init__(self):

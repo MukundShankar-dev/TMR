@@ -4,16 +4,6 @@ import logging
 import hydra
 import yaml
 from tqdm import tqdm
-# import time
-
-logger = logging.getLogger(__name__)
-
-
-def save_metric(path, metrics):
-    strings = yaml.dump(metrics, indent=4, sort_keys=False)
-    with open(path, "w") as f:
-        f.write(strings)
-
 
 def compute_sim_matrix(model, dataset, keyids, batch_size=256):
     import torch
@@ -92,11 +82,13 @@ def retrieval(newcfg: DictConfig) -> None:
 
     pl.seed_everything(cfg.seed)
 
-    logger.info("Loading the model")
     model = load_model_from_cfg(cfg, ckpt_name, eval_mode=True, device=device)
 
     datasets = {}
     results = {}
+
+    all_metrics = {}
+
     for protocol in protocols:
         # Load the dataset if not already
         if protocol not in datasets:
@@ -174,13 +166,11 @@ def retrieval(newcfg: DictConfig) -> None:
                 emb, threshold = None, None
             metrics = all_contrastive_metrics(sim_matrix, emb, threshold=threshold)
 
-        print_latex_metrics(metrics)
-
         metric_name = f"{protocol_name}.yaml"
         path = os.path.join(save_dir, metric_name)
-        save_metric(path, metrics)
-
-        logger.info(f"Testing done, metrics saved in:\n{path}")
+        all_metrics[protocol] = metrics
+    
+    return all_metrics
 
 
 if __name__ == "__main__":

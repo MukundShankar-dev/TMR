@@ -107,6 +107,9 @@
             },
             {
                 "_target_": "src.callback.tqdmbar.TQDMProgressBar"
+            },
+            {
+                "_target_": "src.callback.all_metrics.AllMetricsLogger"
             }
         ],
         "logger": {

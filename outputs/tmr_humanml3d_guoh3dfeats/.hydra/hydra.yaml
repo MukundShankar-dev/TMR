@@ -117,12 +117,11 @@ hydra:
   overrides:
     hydra:
     - hydra.mode=RUN
-    task:
-    - model.use_dtw=False
+    task: []
   job:
     name: train
     chdir: null
-    override_dirname: model.use_dtw=False
+    override_dirname: ''
     id: ???
     num: ???
     config_name: train
