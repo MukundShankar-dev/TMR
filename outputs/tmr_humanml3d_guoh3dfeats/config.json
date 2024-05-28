@@ -67,18 +67,20 @@
             "latent": 1e-05,
             "kl": 1e-05,
             "contrastive": 0.1,
-            "dtw": 0.1
+            "dtw": 1.0
         },
         "lr": 0.0001,
         "temperature": 0.1,
         "threshold_selfsim": 0.8,
         "threshold_selfsim_metrics": 0.95,
         "log_wandb": true,
-        "use_dtw": false
+        "use_dtw": true,
+        "dtw_loss_type": "cosine",
+        "dtw_margin": 0.1
     },
     "trainer": {
         "_target_": "pytorch_lightning.Trainer",
-        "max_epochs": 500,
+        "max_epochs": 100,
         "log_every_n_steps": 50,
         "num_sanity_val_steps": 0,
         "check_val_every_n_epoch": 1,
@@ -126,6 +128,6 @@
     "dataloader": {
         "_target_": "torch.utils.data.DataLoader",
         "batch_size": 32,
-        "num_workers": 8
+        "num_workers": 1
     }
 }

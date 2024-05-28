@@ -6,6 +6,7 @@ import torch.nn as nn
 from .temos import TEMOS
 from .losses import InfoNCE_with_filtering
 from .losses import DTWLoss
+from .losses import TripletLossCosine
 from .metrics import all_contrastive_metrics
 import wandb
 
@@ -15,6 +16,9 @@ from ..data.collate import collate_text_motion
 from omegaconf import DictConfig
 import numpy as np
 from hydra.utils import instantiate
+
+# Interpretability stuff, visualize where each model is going wrong
+# Different margins:[0.05, 0.1, 0.2, 0.3, 0.5]
 
 # x.T will be deprecated in pytorch
 def transpose(x):
@@ -62,13 +66,15 @@ class TMR(TEMOS):
         fact: Optional[float] = None,
         sample_mean: Optional[bool] = False,
         # lmd: Dict = {"recons": 1.0, "latent": 1.0e-5, "kl": 1.0e-5, "contrastive": 0.1},
-        lmd: Dict = {"recons": 1.0, "latent": 1.0e-5, "kl": 1.0e-5, "contrastive": 0.1, "dtw": 10.0},
+        lmd: Dict = {"recons": 1.0, "latent": 1.0e-5, "kl": 1.0e-5, "contrastive": 0.1, "dtw": 0.1},
         lr: float = 1e-4,
         temperature: float = 0.7,
         threshold_selfsim: float = 0.80,
         threshold_selfsim_metrics: float = 0.95,
         log_wandb: bool = True,
-        use_dtw: bool = True
+        use_dtw: bool = True,
+        dtw_loss_type: str = "euclidean",
+        dtw_margin: float = 0.1
     ) -> None:
         
         # Initialize module like TEMOS
@@ -83,7 +89,7 @@ class TMR(TEMOS):
             lr=lr,
         )
 
-        self.lmd = lmd
+        # self.lmd = lmd
         config_dict = {
             "lmd": lmd,
             "lr": lr,
@@ -92,13 +98,15 @@ class TMR(TEMOS):
             "threshold_selfsim_metrics": threshold_selfsim_metrics,
             "lmd": lmd,
             "use_dtw": use_dtw,
+            "dtw_loss_type": dtw_loss_type,
+            "dtw_margin": dtw_margin,
             "vae": vae,
             "epochs": 500,
         }
         self.log_wandb = log_wandb
 
         if self.log_wandb:
-            wandb.init(entity="mukundshankar", project="tmr_with_dtw", name="Vanilla model (correct logs)", config=config_dict)
+            wandb.init(entity="mukundshankar", project="tmr_with_dtw", name="Testing cosine loss term", config=config_dict)
 
         self.use_dtw = use_dtw
 
@@ -109,7 +117,12 @@ class TMR(TEMOS):
         self.threshold_selfsim_metrics = threshold_selfsim_metrics
 
         if self.use_dtw:
-            self.dtw_loss_fn = DTWLoss()
+            if dtw_loss_type == "euclidean":
+                self.dtw_loss_fn = DTWLoss(dtw_margin)
+            elif dtw_loss_type == "cosine":
+                self.dtw_loss_fn = TripletLossCosine(dtw_margin)
+            else:
+                raise ValueError("Invalid DTW loss type")
 
         # store validation values to compute retrieval metrics
         # on the whole validation set
@@ -370,9 +383,6 @@ class TMR(TEMOS):
                     emb, threshold = None, None
                 metrics = all_contrastive_metrics(sim_matrix, emb, threshold=threshold)
 
-            # metric_name = protocol_name
-            # metrics_to_log[metric_name] = metrics
-            # path = os.path.join(save_dir, metric_name)
             metrics_to_log[protocol] = metrics
         
         if self.log_wandb:

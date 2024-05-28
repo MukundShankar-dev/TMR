@@ -17,3 +17,5 @@ threshold_selfsim: 0.80
 threshold_selfsim_metrics: 0.95
 log_wandb: True
 use_dtw: False
+dtw_loss_type: "euclidean"
+dtw_margin: 0.1

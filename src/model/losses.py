@@ -56,8 +56,8 @@ class InfoNCE_with_filtering:
         return f"Constrastive(temp={self.temp})"
 
 class DTWLoss:
-    def __init__(self):
-        pass
+    def __init__(self, margin=0.1):        
+        self.margin = margin
 
     def __call__(self, anchor_latent, positive_latent, negative_latent):
         triplet_loss = 0
@@ -65,5 +65,21 @@ class DTWLoss:
         # x_logits = torch.nn.functional.normalize(x, dim=-1)
         # y_logits = torch.nn.functional.normalize(y, dim=-1)
 
-        triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2, eps=1e-7)
+        # The margin on our runs before 25/05/2024 which use this term were 1.0
+        triplet_loss = nn.TripletMarginLoss(margin = self.margin, p=2, eps=1e-7)
         return triplet_loss(anchor_latent, positive_latent, negative_latent)
+    
+# Use cosine scores instead to bound losses?
+class TripletLossCosine:
+    def __init__(self, margin=0.1):
+        self.margin = margin
+
+    def __call__(self, anchor, positive, negative):
+        cos_sim = F.cosine_similarity
+
+        pos_similarity = F.cosine_similarity(anchor, positive)
+        neg_similarity = F.cosine_similarity(anchor, negative)
+
+        losses = torch.relu(-pos_similarity + neg_similarity + self.margin)
+
+        return losses.mean()

@@ -47,10 +47,6 @@ parser.add_argument('--cores', default=4, type=int, help='Number of cpu cores')
 parser.add_argument('--mem', default=5, type=int, help='RAM in G')
 parser.add_argument('--gpu_type', default='none', type=str, help='RAM in G')
 
-
-# parser.add_argument('--path', default='/fs/vulcan-projects/actionbytes/vis/ab_training_run3_rerun_32_0.0001_4334_new_dl_nocasl_checkpoint_best_dmap_ab_info.hkl')
-# parser.add_argument('--num_ab', default= 100000, type=int, help='number of actionbytes')
-
 args = parser.parse_args()
 
 feat_dump = True
@@ -58,22 +54,16 @@ feat_dump = True
 args = parser.parse_args()
 args.env += str(int(time.time()))
 
-
 output_dir = os.path.join(args.base_dir, args.output_dirname, args.env)
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
-
-
 print("Output Directory: %s" % output_dir)
-per_job = 100
-total_ids = 27448
 
-params = [(start_idx) for  start_idx in range(0, total_ids, per_job)]
+# all the margins we want to use
+params = [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.5]
 
-print(len(params))
-pca = True
-                        
+pca = True              
 temporal_skip = None
 hostname = socket.gethostname()
 with open(f'{args.base_dir}/output/{args.env}/now.txt', "w") as nowfile,\
