@@ -2,6 +2,7 @@ datasets
 samples_200.json
 wandb
 outputs
+output
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -11,9 +11,11 @@ import argparse
 
 # parser for the model
 parser = argparse.ArgumentParser()
-parser.add_argument("--run_dir", default="models/tmr_humanml3d_guoh3dfeats")
+parser.add_argument("--run_dir_1", default="outputs/tmr_humanml3d_guoh3dfeats_vanilla_model/")
+parser.add_argument("--run_dir_2", default="outputs/tmr_humanml3d_guoh3dfeats_0.5_lmd")
 args = parser.parse_args()
-MODEL_PATH = args.run_dir
+MODEL_1_PATH = args.run_dir_1
+MODEL_2_PATH = args.run_dir_2
 
 # For now, only compatible with the humanml3d dataset
 DATASET = "humanml3d"
@@ -216,7 +218,7 @@ autoplay loop disablepictureinpicture id="{video_id}" title="{title}">
     return video_html
 
 
-def retrieve_component(retrieve_function, text, splits_choice, nvids, n_component=24):
+def retrieve_component(retrieve_function_1, retrieve_function_2, text, splits_choice, nvids, n_component=24):
     if text == DEFAULT_TEXT or text == "" or text is None:
         return [None for _ in range(n_component)]
 
@@ -228,21 +230,40 @@ def retrieve_component(retrieve_function, text, splits_choice, nvids, n_componen
     else:
         split = "all"
 
-    datas = retrieve_function(text=text, split=split, nmax=nvids)
-    htmls = [get_video_html(data, idx) for idx, data in enumerate(datas)]
+    datas_1 = retrieve_function_1(text=text, split=split, nmax=nvids)
+    datas_2 = retrieve_function_2(text=text, split=split, nmax=nvids)
+    htmls_1 = [get_video_html(data, idx) for idx, data in enumerate(datas_1)]
+    htmls_2 = [get_video_html(data, idx) for idx, data in enumerate(datas_2)]
     # get n_component exactly if asked less
     # pad with dummy blocks
-    htmls = htmls + [None for _ in range(max(0, n_component - nvids))]
-    return htmls
+    num_vids = len(htmls_1)
+    htmls_1 = htmls_1 + [None for _ in range(max(0, n_component - nvids))]
+    htmls_2 = htmls_2 + [None for _ in range(max(0, n_component - nvids))]
+    # htmls = htmls_1 + htmls_2
 
+    htmls = []
+    for i in range(num_vids):
+        html_output = "<table>"
+        video_1 = htmls_1[i]
+        video_2 = htmls_2[i]
+        html_output += f"<tr><td>{video_1}</td><td>{video_2}</td></tr>"
+        # for video1, video2 in zip(htmls_1, htmls_2):
+            # html_output += f"<tr><td>{video1}</td><td>{video2}</td></tr>"
+        html_output += "</table>"
+        htmls.append(html_output)
+    return htmls
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # LOADING
-model = TMR_text_encoder(MODEL_PATH).to(device)
+model_1 = TMR_text_encoder(MODEL_1_PATH).to(device)
+model_2 = TMR_text_encoder(MODEL_2_PATH).to(device)
 
-unit_motion_embs, keyids_index, index_keyids = load_unit_embeddings(
-    MODEL_PATH, DATASET, device
+unit_motion_embs_1, keyids_index_1, index_keyids_1 = load_unit_embeddings(
+    MODEL_1_PATH, DATASET, device
+)
+unit_motion_embs_2, keyids_index_2, index_keyids_2 = load_unit_embeddings(
+    MODEL_2_PATH, DATASET, device
 )
 
 all_keyids = load_splits(DATASET, splits=["test", "all"])
@@ -251,19 +272,30 @@ h3d_index = load_json(f"datasets/annotations/{DATASET}/annotations.json")
 amass_to_babel = load_json("demo/amass_to_babel.json")
 
 keyid_to_url = partial(humanml3d_keyid_to_babel_rendered_url, h3d_index, amass_to_babel)
-retrieve_function = partial(
+
+retrieve_function_1 = partial(
     retrieve,
-    model=model,
+    model=model_1,
     keyid_to_url=keyid_to_url,
-    unit_motion_embs=unit_motion_embs,
+    unit_motion_embs=unit_motion_embs_1,
     all_keyids=all_keyids,
-    keyids_index=keyids_index,
-    index_keyids=index_keyids,
+    keyids_index=keyids_index_1,
+    index_keyids=index_keyids_1,
+)
+retrieve_function_2 = partial(
+    retrieve,
+    model=model_2,
+    keyid_to_url=keyid_to_url,
+    unit_motion_embs=unit_motion_embs_2,
+    all_keyids=all_keyids,
+    keyids_index=keyids_index_2,
+    index_keyids=index_keyids_2,
 )
 
 # DEMO
 theme = gr.themes.Default(primary_hue="blue", secondary_hue="gray")
-retrieve_and_show = partial(retrieve_component, retrieve_function)
+
+retrieve_and_show = partial(retrieve_component, retrieve_function_1, retrieve_function_2)
 
 with gr.Blocks(css=CSS, theme=theme) as demo:
     gr.Markdown(WEBSITE)

@@ -74,7 +74,9 @@ class TMR(TEMOS):
         log_wandb: bool = True,
         use_dtw: bool = True,
         dtw_loss_type: str = "euclidean",
-        dtw_margin: float = 0.1
+        dtw_margin: float = 0.1,
+        wandb_name: str = "TMR",
+        run_dir: str = "tmr_humanml3d_guoh3dfeats"
     ) -> None:
         
         # Initialize module like TEMOS
@@ -106,7 +108,7 @@ class TMR(TEMOS):
         self.log_wandb = log_wandb
 
         if self.log_wandb:
-            wandb.init(entity="mukundshankar", project="tmr_with_dtw", name="Testing cosine loss term", config=config_dict)
+            wandb.init(entity="mukundshankar", project="tmr_with_dtw", name=wandb_name, config=config_dict)
 
         self.use_dtw = use_dtw
 
@@ -130,7 +132,8 @@ class TMR(TEMOS):
         self.validation_step_m_latents = []
         self.validation_step_sent_emb = []
 
-        cfg = read_config("/vulcanscratch/mukunds/downloads/TMR/outputs/tmr_humanml3d_guoh3dfeats")
+        cfg = read_config("/vulcanscratch/mukunds/downloads/TMR/outputs/tmr_humanml3d_guoh3dfeats_vanilla_model")
+        # cfg = read_config(f"/vulcanscratch/mukunds/downloads/TMR/{run_dir}")
         
         self.val_datasets = {}
         self.protocols = ["normal", "threshold", "guo", "nsim"]

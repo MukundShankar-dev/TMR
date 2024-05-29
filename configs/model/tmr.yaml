@@ -19,3 +19,5 @@ log_wandb: True
 use_dtw: False
 dtw_loss_type: "euclidean"
 dtw_margin: 0.1
+wandb_name: "TMR"
+run_dir: tmr_humanml3d_guoh3dfeats
