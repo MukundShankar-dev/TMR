@@ -12,7 +12,7 @@ import argparse
 # parser for the model
 parser = argparse.ArgumentParser()
 parser.add_argument("--run_dir_1", default="outputs/tmr_humanml3d_guoh3dfeats_vanilla_model/")
-parser.add_argument("--run_dir_2", default="outputs/tmr_humanml3d_guoh3dfeats_0.5_lmd")
+parser.add_argument("--run_dir_2", default="outputs/tmr_cos_loss_0.15")
 args = parser.parse_args()
 MODEL_1_PATH = args.run_dir_1
 MODEL_2_PATH = args.run_dir_2
@@ -236,9 +236,9 @@ def retrieve_component(retrieve_function_1, retrieve_function_2, text, splits_ch
     htmls_2 = [get_video_html(data, idx) for idx, data in enumerate(datas_2)]
     # get n_component exactly if asked less
     # pad with dummy blocks
-    num_vids = len(htmls_1)
     htmls_1 = htmls_1 + [None for _ in range(max(0, n_component - nvids))]
     htmls_2 = htmls_2 + [None for _ in range(max(0, n_component - nvids))]
+    num_vids = len(htmls_1)
     # htmls = htmls_1 + htmls_2
 
     htmls = []
@@ -246,11 +246,14 @@ def retrieve_component(retrieve_function_1, retrieve_function_2, text, splits_ch
         html_output = "<table>"
         video_1 = htmls_1[i]
         video_2 = htmls_2[i]
-        html_output += f"<tr><td>{video_1}</td><td>{video_2}</td></tr>"
-        # for video1, video2 in zip(htmls_1, htmls_2):
-            # html_output += f"<tr><td>{video1}</td><td>{video2}</td></tr>"
-        html_output += "</table>"
-        htmls.append(html_output)
+        if video_1 != None:
+            html_output += f"<tr><td>{video_1}</td><td>{video_2}</td></tr>"
+            # for video1, video2 in zip(htmls_1, htmls_2):
+                # html_output += f"<tr><td>{video1}</td><td>{video2}</td></tr>"
+            html_output += "</table>"
+            htmls.append(html_output)
+        else:
+            htmls.append(video_1)
     return htmls
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

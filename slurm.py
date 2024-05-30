@@ -4,6 +4,7 @@ import argparse
 import time
 import pandas as pd
 import socket
+from itertools import product
 
 
 qos_dict = {"sailon" : {"nhrs" : 2, "cores": 16, "mem":128},
@@ -32,7 +33,7 @@ def check_qos(args):
 
 #TODO: Add day funtionality too 
 parser = argparse.ArgumentParser()
-parser.add_argument('--nhrs', type=int, default=5)
+parser.add_argument('--nhrs', type=int, default=48)
 parser.add_argument('--base-dir', default=f'{os.getcwd()}')
 parser.add_argument('--output-dirname', default='output')
 parser.add_argument('--dryrun', action='store_true')
@@ -44,7 +45,7 @@ parser.add_argument('--qos', default="scav", type=str, help='Qos to run')
 parser.add_argument('--env', default="train_logs", type=str, help = "Set the name of the dir you want to dump")
 parser.add_argument('--gpu', default=1, type=int, help='Number of gpus')
 parser.add_argument('--cores', default=8, type=int, help='Number of cpu cores')
-parser.add_argument('--mem', default=5, type=int, help='RAM in G')
+parser.add_argument('--mem', default=32, type=int, help='RAM in G')
 parser.add_argument('--gpu_type', default='none', type=str, help='RAM in G')
 
 args = parser.parse_args()
@@ -61,7 +62,10 @@ if not os.path.exists(output_dir):
 print("Output Directory: %s" % output_dir)
 
 # all the margins we want to use
-params = [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.5]
+all_lmd_contrastive = [0.1, 0.3, 0.5, 0.7, 0.9]
+all_lmd_dtw = [0.1, 0.3, 0.5, 0.7, 0.9]
+params = list(product(all_lmd_contrastive, all_lmd_dtw))
+# params = [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.5]
 
 pca = True              
 temporal_skip = None
@@ -71,11 +75,18 @@ with open(f'{args.base_dir}/output/{args.env}/now.txt', "w") as nowfile,\
      open(f'{args.base_dir}/output/{args.env}/err.txt', "w") as error_namefile,\
      open(f'{args.base_dir}/output/{args.env}/name.txt', "w") as namefile:
     
-    for i, margin in enumerate(params):
+    for lmd_contrastive, lmd_dtw in params:
         now = datetime.now()
         datetimestr = now.strftime("%m%d_%H%M:%S.%f")
-        name = f'test_margin_{margin}'
-        cmd = f'python train.py run_dir=outputs/tmr_cos_loss_{margin} model.run_dir=outputs/tmr_cos_loss_{margin} model.lmd.dtw=1.0 model.dtw_loss_type=\"cosine\" model.use_dtw=True model.dtw_margin={margin} model.wandb_name=\"TMR_cosine_{margin}\"'
+        
+        name = f'test_cont_{lmd_contrastive}_dtw_{lmd_dtw}'
+
+        cmd = f'python train.py run_dir=outputs/tmr_cont_{lmd_contrastive}_dtw_{lmd_dtw} '
+        cmd += f'model.run_dir=outputs/tmr_cont_{lmd_contrastive}_dtw_{lmd_dtw} '
+        cmd += 'model.lmd.dtw=1.0'
+        cmd += 'model.dtw_loss_type=\"cosine\" model.use_dtw=True '
+        cmd += f'model.dtw_margin=0.15 '
+        cmd += f'model.wandb_name=\"cont_{lmd_contrastive},dtw_{lmd_dtw}\"'
         
         nowfile.write(f'{cmd}\n')
         namefile.write(f'{(os.path.join(output_dir, name))}.log\n')
@@ -133,7 +144,7 @@ with open(slurm_script_path, 'w') as slurmfile:
             elif args.gpu_type == 'a5':
                 gpu_str = 'rtxa5000:'
             else:
-                gpu_str = ''
+                gpu_str = 'rtx2080ti:'
             slurmfile.write(f'#SBATCH --gres=gpu:{gpu_str}{args.gpu}\n')
            
     else:

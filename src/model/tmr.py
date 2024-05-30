@@ -76,7 +76,7 @@ class TMR(TEMOS):
         dtw_loss_type: str = "euclidean",
         dtw_margin: float = 0.1,
         wandb_name: str = "TMR",
-        run_dir: str = "tmr_humanml3d_guoh3dfeats"
+        run_dir: str = "tmr_cos_loss_0.15"
     ) -> None:
         
         # Initialize module like TEMOS
