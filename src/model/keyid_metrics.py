@@ -136,6 +136,7 @@ def cols2metrics(cols, num_queries, keyids, rounding=2):
         for val in vals:
             if keyid_val < int(val):
                 keyid_metrics[f"R{val}"] = True
+                keyid_val = 100
             else:
                 keyid_metrics[f"R{val}"] = False
         all_keyid_metrics[keyid] = keyid_metrics

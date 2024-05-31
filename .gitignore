@@ -4,6 +4,7 @@ wandb
 outputs
 old_outputs
 output
+sentence_sim_matrix.pt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

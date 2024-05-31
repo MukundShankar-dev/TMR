@@ -30,6 +30,7 @@ class InfoNCE_with_filtering:
         sim_matrix = x_logits @ y_logits.T
         return sim_matrix
 
+    # x = text latents, y = motion latents.
     def __call__(self, x, y, sent_emb=None):
         bs, device = len(x), x.device
         sim_matrix = self.get_sim_matrix(x, y) / self.temperature
