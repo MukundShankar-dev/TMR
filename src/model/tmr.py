@@ -132,7 +132,7 @@ class TMR(TEMOS):
         self.validation_step_m_latents = []
         self.validation_step_sent_emb = []
 
-        cfg = read_config("/vulcanscratch/mukunds/downloads/TMR/outputs/tmr_humanml3d_guoh3dfeats_vanilla_model")
+        cfg = read_config("/vulcanscratch/mukunds/downloads/TMR/old_outputs/tmr_humanml3d_guoh3dfeats_vanilla_model")
         # cfg = read_config(f"/vulcanscratch/mukunds/downloads/TMR/{run_dir}")
         
         self.val_datasets = {}

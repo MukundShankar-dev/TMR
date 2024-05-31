@@ -23,17 +23,17 @@ def print_latex_metrics(metrics):
 
 
 def all_contrastive_metrics(
-    sims, emb=None, threshold=None, rounding=2, return_cols=False
+    sims, keyids, emb=None, threshold=None, rounding=2, return_cols=False
 ):
     text_selfsim = None
     if emb is not None:
         text_selfsim = emb @ emb.T
 
     t2m_m, t2m_keyid_metrics, t2m_cols = contrastive_metrics(
-        sims, text_selfsim, threshold, return_cols=True, rounding=rounding
+        sims, keyids, text_selfsim, threshold, return_cols=True, rounding=rounding
     )
     m2t_m, m2t_keyid_metrics, m2t_cols = contrastive_metrics(
-        sims.T, text_selfsim, threshold, return_cols=True, rounding=rounding
+        sims.T, keyids, text_selfsim, threshold, return_cols=True, rounding=rounding
     )
 
     keyid_metrics = {"t2m": t2m_keyid_metrics, "m2t": m2t_keyid_metrics}
@@ -91,9 +91,10 @@ def contrastive_metrics(
     msg = "expected ranks to match queries ({} vs {}) "
     assert cols.size == num_queries, msg
 
+    metrics, keyid_metrics = cols2metrics(cols, num_queries,keyids, rounding=rounding)
     if return_cols:
-        return cols2metrics(cols, num_queries,keyids, rounding=rounding), cols
-    return cols2metrics(cols, num_queries,keyids, rounding=rounding)
+        return metrics, keyid_metrics, cols
+    return metrics, keyid_metrics
 
 
 def break_ties_average(sorted_dists, gt_dists):
@@ -129,7 +130,7 @@ def cols2metrics(cols, num_queries, keyids, rounding=2):
     metrics["MedR"] = float(np.median(cols) + 1)
 
     all_keyid_metrics = {}
-    for idx, keyid in keyids:
+    for idx, keyid in enumerate(keyids):
         keyid_metrics = {}
         keyid_val = cols[idx]
         for val in vals:
@@ -143,4 +144,4 @@ def cols2metrics(cols, num_queries, keyids, rounding=2):
     if rounding is not None:
         for key in metrics:
             metrics[key] = round(metrics[key], rounding)
-    return metrics, keyid_metrics
+    return metrics, all_keyid_metrics

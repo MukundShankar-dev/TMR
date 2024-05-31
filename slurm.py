@@ -62,8 +62,10 @@ if not os.path.exists(output_dir):
 print("Output Directory: %s" % output_dir)
 
 # all the margins we want to use
-all_lmd_contrastive = [0.1, 0.3, 0.5, 0.7, 0.9]
-all_lmd_dtw = [0.1, 0.3, 0.5, 0.7, 0.9]
+# all_lmd_contrastive = [0.1, 0.3, 0.5, 0.7, 0.9]
+all_lmd_contrastive = [0.1, 0.3, 0.5]
+# all_lmd_dtw = [0.1, 0.3, 0.5, 0.7, 0.9]
+all_lmd_dtw = [0.5, 0.7, 0.9]
 params = list(product(all_lmd_contrastive, all_lmd_dtw))
 # params = [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.5]
 
@@ -83,7 +85,7 @@ with open(f'{args.base_dir}/output/{args.env}/now.txt', "w") as nowfile,\
 
         cmd = f'python train.py run_dir=outputs/tmr_cont_{lmd_contrastive}_dtw_{lmd_dtw} '
         cmd += f'model.run_dir=outputs/tmr_cont_{lmd_contrastive}_dtw_{lmd_dtw} '
-        cmd += 'model.lmd.dtw=1.0'
+        cmd += 'model.lmd.dtw=1.0 '
         cmd += 'model.dtw_loss_type=\"cosine\" model.use_dtw=True '
         cmd += f'model.dtw_margin=0.15 '
         cmd += f'model.wandb_name=\"cont_{lmd_contrastive},dtw_{lmd_dtw}\"'
@@ -169,6 +171,7 @@ with open(slurm_script_path, 'w') as slurmfile:
     slurmfile.write("export MKL_THREADING_LAYER=GNU\n")
     slurmfile.write("source /vulcanscratch/mukunds/anaconda3/bin/activate\n")
     slurmfile.write("conda activate tmr\n")
+    slurmfile.write("export HYDRA_FULL_ERROR=1\n")
     # slurmfile.write("cd ./libs/utils\n")
     # slurmfile.write("python setup.py install --user\n")
     # slurmfile.write("cd ../..\n")

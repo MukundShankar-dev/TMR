@@ -153,7 +153,7 @@ def retrieval(newcfg: DictConfig) -> None:
             all_metrics = []
             for x in result:
                 sim_matrix = x["sim_matrix"]
-                metrics, keyid_metrics = all_contrastive_metrics(sim_matrix, rounding=None)
+                metrics, keyid_metrics = all_contrastive_metrics(sim_matrix, dataset.keyids, rounding=None)
                 all_metrics.append(metrics)
 
             avg_metrics = {}
@@ -174,11 +174,11 @@ def retrieval(newcfg: DictConfig) -> None:
                 protocol_name = protocol + f"_{threshold}"
             else:
                 emb, threshold = None, None
-            metrics, keyid_metrics = all_contrastive_metrics(sim_matrix, emb, threshold=threshold)
+            metrics, keyid_metrics = all_contrastive_metrics(sim_matrix, dataset.keyids, emb, threshold=threshold)
 
         print_latex_metrics(metrics)
 
-        with open(f"{save_dir}/{protocol_name}_keyid_metrics.json", w) as file:
+        with open(f"{save_dir}/{protocol_name}_keyid_metrics.json", 'w') as file:
             json.dump(keyid_metrics, file)
             
 
