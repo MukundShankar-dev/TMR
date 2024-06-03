@@ -34,11 +34,12 @@ def process_metrics(direction, protocol):
     only_vanilla = df[(df['vanilla_R01'] == True) & (df['ours_R01'] == False)]
     only_ours = df[(df['vanilla_R01'] == False) & (df['ours_R01'] == True)]
     neither = df[(df['vanilla_R01'] == False) & (df['ours_R01'] == False)]
+    # breakpoint()
 
-    # print(f"both: {both.shape}")
-    # print(f"vanilla: {only_vanilla.shape}")
-    # print(f"ours: {only_ours.shape}")
-    # print(f"neither: {neither.shape}")
+    print(f"both: {both.shape[0]/ df.shape[0]}")
+    print(f"vanilla: {only_vanilla.shape[0]/ df.shape[0]}")
+    print(f"ours: {only_ours.shape[0]/ df.shape[0]}")
+    print(f"neither: {neither.shape[0]/ df.shape[0]}")
 
     print('where both work:')
     both_sample = both.sample(5)

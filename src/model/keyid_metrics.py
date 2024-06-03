@@ -131,16 +131,19 @@ def cols2metrics(cols, num_queries, keyids, rounding=2):
 
     all_keyid_metrics = {}
     for idx, keyid in enumerate(keyids):
-        keyid_metrics = {}
+        keyid_metrics = {"R01": False, "R02": False, "R03": False, "R05": False, "R10": False}
         keyid_val = cols[idx]
-        for val in vals:
-            if keyid_val < int(val):
-                keyid_metrics[f"R{val}"] = True
-                keyid_val = 100
-            else:
-                keyid_metrics[f"R{val}"] = False
+        if keyid_val < 1:
+            keyid_metrics["R01"] = True
+        elif keyid_val < 2:
+            keyid_metrics["R02"] = True
+        elif keyid_val < 3:
+            keyid_metrics["R03"] = True
+        elif keyid_val < 5:
+            keyid_metrics["R05"] = True
+        elif keyid_val < 10:
+            keyid_metrics["R10"] = True
         all_keyid_metrics[keyid] = keyid_metrics
-
 
     if rounding is not None:
         for key in metrics:

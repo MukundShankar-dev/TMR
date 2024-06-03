@@ -12,8 +12,6 @@ def get_annotations():
         to_return = json.load(json_file)
     return to_return
 
-
-
 if __name__  == '__main__':
     parser = argparse.ArgumentParser()
 
@@ -41,7 +39,9 @@ if __name__  == '__main__':
         m2t_data[keyid]['annotations'] = annotations
     
     df1 = pd.DataFrame.from_dict(t2m_data, orient='index')
+    # df1.columns = ['keyid','R01','R02','R03','R05','R10','annotations']
     df2 = pd.DataFrame.from_dict(m2t_data, orient='index')
+    # df2.columns = ['R01','R02','R03','R05','R10','annotations']
 
     df1.to_csv(f"{args.run_dir}/contrastive_metrics_2/t2m_{args.protocol}_keyid_metrics.csv")
     df2.to_csv(f"{args.run_dir}/contrastive_metrics_2/m2t_{args.protocol}_keyid_metrics.csv")
