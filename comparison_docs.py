@@ -58,7 +58,7 @@ def process_metrics(direction, protocol):
         annotations = ast.literal_eval(row['annotations'])
         print(annotations[0])
 
-    print("\n\n where neither model works:")
+    print("\n\n where neither of the models work:")
     neither_sample = neither.sample(5)
     for idx, row in neither_sample.iterrows():
         annotations = ast.literal_eval(row['annotations'])
