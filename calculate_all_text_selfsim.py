@@ -20,15 +20,13 @@ def train(cfg: DictConfig):
     )
 
     embs = []
-    for idx, data in enumerate(dataloader):
+    for data in enumerate(dataloader):
         embs.append(data['sent_emb'])
     embs = torch.cat(embs, axis=0)
-    print(f"size of cat guy thing: {embs.shape}")
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     embs = embs.to(device)
     text_selfsim_matrix = embs @ embs.T
-    print(text_selfsim_matrix.shape)
     torch.save(text_selfsim_matrix, "/vulcanscratch/mukunds/downloads/TMR/sentence_sim_matrix.pt")
 
 if __name__ == "__main__":

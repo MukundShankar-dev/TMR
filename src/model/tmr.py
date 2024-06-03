@@ -93,18 +93,20 @@ class TMR(TEMOS):
 
         # self.lmd = lmd
         config_dict = {
-            "lmd": lmd,
             "lr": lr,
             "temp": temperature,
             "threshold_selfsim": threshold_selfsim,
             "threshold_selfsim_metrics": threshold_selfsim_metrics,
-            "lmd": lmd,
             "use_dtw": use_dtw,
             "dtw_loss_type": dtw_loss_type,
             "dtw_margin": dtw_margin,
             "vae": vae,
             "epochs": 500,
         }
+
+        for key in lmd:
+            config_dict[f"lmd_{key}"] = lmd[key]
+
         self.log_wandb = log_wandb
 
         if self.log_wandb:

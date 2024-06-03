@@ -5,6 +5,7 @@ outputs
 old_outputs
 output
 sentence_sim_matrix.pt
+combined_metrics
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
