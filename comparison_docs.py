@@ -26,6 +26,14 @@ def get_metrics(direction, protocol):
 
     return new_df
 
+def save_annotations(df, filename):
+    with open(f'comparitive_metrics/annotations/{filename}.txt', 'w') as file:
+        for idx, row in df.iterrows():
+            annotations_lst = ast.literal_eval(row['annotations'])
+            for annotation in annotations_lst:
+                file.write(f'{annotation}\n')
+    return
+
 def process_metrics(direction, protocol):
     file_path = f"combined_metrics/{direction}_{protocol}.csv"
     df = pd.read_csv(file_path)
@@ -36,34 +44,40 @@ def process_metrics(direction, protocol):
     neither = df[(df['vanilla_R01'] == False) & (df['ours_R01'] == False)]
     # breakpoint()
 
-    print(f"both: {both.shape[0]/ df.shape[0]}")
-    print(f"vanilla: {only_vanilla.shape[0]/ df.shape[0]}")
-    print(f"ours: {only_ours.shape[0]/ df.shape[0]}")
-    print(f"neither: {neither.shape[0]/ df.shape[0]}")
+    save_annotations(both, f"{direction}_{protocol}_both")
+    save_annotations(only_vanilla, f"{direction}_{protocol}_vanilla")
+    save_annotations(only_ours, f"{direction}_{protocol}_ours")
+    save_annotations(neither, f"{direction}_{protocol}_neither")
 
-    print('where both work:')
-    both_sample = both.sample(5)
-    for idx, row in both_sample.iterrows():
-        annotations = ast.literal_eval(row['annotations'])
-        print(annotations[0])
+    print(f'saved files for {direction}, {protocol}')
+    # print(f"both: {both.shape[0]/ df.shape[0]}")
+    # print(f"vanilla: {only_vanilla.shape[0]/ df.shape[0]}")
+    # print(f"ours: {only_ours.shape[0]/ df.shape[0]}")
+    # print(f"neither: {neither.shape[0]/ df.shape[0]}")
+
+    # print('where both work:')
+    # both_sample = both.sample(5)
+    # for idx, row in both_sample.iterrows():
+    #     annotations = ast.literal_eval(row['annotations'])
+    #     print(annotations[0])
         
-    print("\n\n where only the vanilla model works:")
-    vanilla_sample = only_vanilla.sample(5)
-    for idx, row in vanilla_sample.iterrows():
-        annotations = ast.literal_eval(row['annotations'])
-        print(annotations[0])
+    # print("\n\n where only the vanilla model works:")
+    # vanilla_sample = only_vanilla.sample(5)
+    # for idx, row in vanilla_sample.iterrows():
+    #     annotations = ast.literal_eval(row['annotations'])
+    #     print(annotations[0])
 
-    print("\n\n where only our model works:")
-    ours_sample = only_ours.sample(5)
-    for idx, row in ours_sample.iterrows():
-        annotations = ast.literal_eval(row['annotations'])
-        print(annotations[0])
+    # print("\n\n where only our model works:")
+    # ours_sample = only_ours.sample(5)
+    # for idx, row in ours_sample.iterrows():
+    #     annotations = ast.literal_eval(row['annotations'])
+    #     print(annotations[0])
 
-    print("\n\n where neither of the models work:")
-    neither_sample = neither.sample(5)
-    for idx, row in neither_sample.iterrows():
-        annotations = ast.literal_eval(row['annotations'])
-        print(annotations[0])
+    # print("\n\n where neither of the models work:")
+    # neither_sample = neither.sample(5)
+    # for idx, row in neither_sample.iterrows():
+    #     annotations = ast.literal_eval(row['annotations'])
+    #     print(annotations[0])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -74,16 +88,16 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     mode = args.mode
+    
+    if args.direction == "all":
+        directions = ["t2m", "m2t"]
+    if args.protocols == "all":
+        protocols = ["normal", "threshold_0.95"]
 
     if mode == "save":
         save_dir = 'combined_metrics'
         os.makedirs(save_dir, exist_ok=True)
-
-        if args.direction == "all":
-            directions = ["t2m", "m2t"]
-        if args.protocols == "all":
-            protocols = ["normal", "threshold_0.95"]
-        
+    
         for direction in directions:
             for protocol in protocols:
                 combined_metrics = get_metrics(direction, protocol)
@@ -92,4 +106,7 @@ if __name__ == '__main__':
                 print(f"doc done. saved in {save_path}")
 
     elif mode == "read":
-        process_metrics(args.direction, args.protocols)
+        for direction in directions:
+            for protocol in protocols:
+                process_metrics(direction, protocol)
+        # process_metrics("t2m", "threshold_0.95")
