@@ -11,8 +11,8 @@ import argparse
 
 # parser for the model
 parser = argparse.ArgumentParser()
-parser.add_argument("--run_dir_1", default="outputs/tmr_humanml3d_guoh3dfeats_vanilla_model/")
-parser.add_argument("--run_dir_2", default="outputs/tmr_cos_loss_0.15")
+parser.add_argument("--run_dir_1", default="old_outputs/tmr_humanml3d_guoh3dfeats_vanilla_model/")
+parser.add_argument("--run_dir_2", default="old_outputs/tmr_cos_loss_0.15")
 args = parser.parse_args()
 MODEL_1_PATH = args.run_dir_1
 MODEL_2_PATH = args.run_dir_2
