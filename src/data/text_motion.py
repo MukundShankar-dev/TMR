@@ -26,7 +26,7 @@ def load_annotations(path, name="annotations.json"):
         return orjson.loads(ff.read())
 
 def load_samples():
-    json_path = "/vulcanscratch/mukunds/downloads/TMR/samples_200.json"
+    json_path = "/vulcanscratch/mukunds/downloads/TMR/samples_both.json"
     with open(json_path, "rb") as ff:
         return orjson.loads(ff.read())
 

@@ -73,6 +73,7 @@ class TMR(TEMOS):
         threshold_selfsim_metrics: float = 0.95,
         log_wandb: bool = True,
         use_dtw: bool = True,
+        use_contrastive: bool = False,
         dtw_loss_type: str = "euclidean",
         dtw_margin: float = 0.1,
         wandb_name: str = "TMR",
@@ -113,11 +114,13 @@ class TMR(TEMOS):
             wandb.init(entity="mukundshankar", project="tmr_with_dtw", name=wandb_name, config=config_dict)
 
         self.use_dtw = use_dtw
+        self.use_contrastive = use_contrastive
 
         # adding the contrastive loss
-        self.contrastive_loss_fn = InfoNCE_with_filtering(
-            temperature=temperature, threshold_selfsim=threshold_selfsim
-        )
+        if self.use_contrastive:
+            self.contrastive_loss_fn = InfoNCE_with_filtering(
+                temperature=temperature, threshold_selfsim=threshold_selfsim
+            )
         self.threshold_selfsim_metrics = threshold_selfsim_metrics
 
         if self.use_dtw:
@@ -204,7 +207,10 @@ class TMR(TEMOS):
         losses["latent"] = self.latent_loss_fn(t_latents, m_latents)
 
         # TMR: adding the contrastive loss
-        losses["contrastive"] = self.contrastive_loss_fn(t_latents, m_latents, sent_emb)
+        # NOTE no contrastive loss
+
+        if self.use_contrastive:
+            losses["contrastive"] = self.contrastive_loss_fn(t_latents, m_latents, sent_emb)
 
         if self.use_dtw:
             # make sure shapes of these are the same

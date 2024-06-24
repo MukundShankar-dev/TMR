@@ -33,8 +33,11 @@ def gen_samples_dtw(threshold):
     files_dir = '/vulcanscratch/mukunds/downloads/TMR_old/dtw_scores'
     files_list = os.listdir(files_dir)
     num_files = len(files_list)
+    
+    total_no_samples = 0
 
     for i in tqdm(range(num_files)):
+        counter = 0
         file = files_list[i]
         df = pd.read_csv(f"{files_dir}/{files_list[i]}")
         anchor_idx_list = df['i'].unique()
@@ -53,8 +56,12 @@ def gen_samples_dtw(threshold):
                 # positive_samples = positives.sample(positives.shape[0])
             positive_samples = positives
             
-            if anchor_keyid == main_df.iloc[2]['keyids']:
-                breakpoint()
+            # breakpoint()
+            if positive_samples.shape[0] == 0:
+                counter += 1
+            
+            # if anchor_keyid == main_df.iloc[2]['keyids']:
+                # breakpoint()
 
             if negatives.shape[0] >= 50:
                 negative_samples = negatives.sample(50)
@@ -82,9 +89,13 @@ def gen_samples_dtw(threshold):
                 "negative_sample_distances": negative_distances.to_list(),
                 "negative_sample_motion_paths": negative_motion_paths.to_list()
             }
+        
+        # print(f"In file {file}, {counter} motions out of 75 have no positive sample...")
+        total_no_samples += counter
 
     with open(f"samples_motion_{threshold}_unsampled.json", "w") as outfile:
         json.dump(samples_dict, outfile)
+    print(f"Total number of motions with no positive sample: {total_no_samples}")
 
     return
 
@@ -137,8 +148,8 @@ def gen_samples_text(threshold):
         
         pos_sample_idx = np.array(pos_indices)
         
-        if i == 2:
-            breakpoint()
+        # if i == 2:
+            # breakpoint()
 
         neg_sample_idx = np.setdiff1d(all_idx, pos_sample_idx)
         neg_sample_idx = np.random.choice(neg_sample_idx, 50, replace=False)
@@ -207,8 +218,8 @@ def get_most_similar_motion(keyid, ref_df, motion_sim_df, text_sim_matrix):
     j_dist = min_row['distance']
     j_idx = int(j_idx)
 
-    if j_dist == 0.0:
-        breakpoint()
+    # if j_dist == 0.0:
+        # breakpoint()
 
     row_annotation = ref_df.iloc[j_idx]['annotations']
 
@@ -216,47 +227,116 @@ def get_most_similar_motion(keyid, ref_df, motion_sim_df, text_sim_matrix):
 
     print(f"Annotation of closest motion using DTW score: {row_annotation}, DTW distance: {j_dist}, text sim: {text_sim}")
 
+# def gen_samples_both():
+#     with open('samples_motion_200_unsampled.json') as jsonfile:
+#         motion_samples = json.load(jsonfile)
+#     with open('samples_text_0.95_unsampled.json') as jsonfile:
+#         text_samples = json.load(jsonfile)
+
+#     ref_df = pd.read_csv('../TMR_old/outputs/tmr_humanml3d_guoh3dfeats_old1/new_latents/embeddings.csv')
+#     text_sim_matrix = torch.load('sentence_sim_matrix.pt')
+#     motion_sim_df = pd.read_csv('/vulcanscratch/mukunds/downloads/TMR_old/dtw_scores/all_dtw_0_75.csv')
+    
+#     # diffs = []
+#     empty_subset = []
+#     counter = 0
+#     for i, keyid in tqdm(enumerate(motion_samples.keys())):
+
+#         pos_motion_samples = motion_samples[keyid]['positive_sample_keyids']
+#         pos_text_samples = text_samples[keyid]['positive_sample_keyids']
+        
+#         # if len(pos_text_samples) == 1:
+#             # print(f"keyid: {keyid}, pos_sample: {pos_text_samples}")
+
+#         common = [common_id for common_id in pos_motion_samples if common_id in pos_text_samples]
+#         if len(common) == 0:
+#             empty_subset.append(keyid)
+#             counter += 1
+        
+#         if len(empty_subset) == 10:
+#             break
+#         # diffs.append(max(len(pos_motion_samples) - len(common), len(pos_text_samples) - len(common)))
+    
+#     for keyid in empty_subset:
+#         print(f"Motion annotation: {ref_df[ref_df['keyids'] == keyid].iloc[0]['annotations']}")
+#         get_most_similar_text(keyid, ref_df, motion_sim_df, text_sim_matrix)
+#         get_most_similar_motion(keyid, ref_df, motion_sim_df, text_sim_matrix)
+#         print()
+
+#     print(f"number of samples with no positive pair: {counter} / 27448")
+#     print(f"{(counter / 27448) * 100}% of the dataset has no positive M/T sample")
+#     # print(f"counter: {counter}")
+
+#     # print(f"mean max diff b/w sample sets: {np.mean(diffs)}")
+#     # print(f"there are {len(empty_subset)} keyids with no positive sample")
+
+def get_tm_samples(idx, distances, similarities):
+    filtered_distances = distances[distances['i'] == idx]
+    motion_ranks = filtered_distances.sort_values(by='distance').index.tolist()
+    motion_ranks = np.array(motion_ranks)
+    motion_ranks = motion_ranks + 1
+    motion_ranks = np.argsort(motion_ranks)
+    motion_ranks = motion_ranks + 1
+    # print(f"length of sorted motion sample indices: {motion_ranks.shape}")
+
+    sims = -similarities[idx]
+    text_ranks = np.argsort(sims)
+    text_ranks = text_ranks + 1
+    text_ranks = np.argsort(sims)
+    # print(f"length of text_ranks: {text_ranks.shape}")
+
+    combined_ranks = motion_ranks + text_ranks
+    combined_ranks_idx = np.argsort(combined_ranks)
+    pos_samples = combined_ranks_idx[1:21]
+    neg_samples = combined_ranks_idx[-20:]
+    return pos_samples, neg_samples
+
+
 def gen_samples_both():
-    with open('samples_motion_300_unsampled.json') as jsonfile:
-        motion_samples = json.load(jsonfile)
-    with open('samples_text_0.9_unsampled.json') as jsonfile:
-        text_samples = json.load(jsonfile)
-
-    ref_df = pd.read_csv('../TMR_old/outputs/tmr_humanml3d_guoh3dfeats_old1/new_latents/embeddings.csv')
-    text_sim_matrix = torch.load('sentence_sim_matrix.pt')
-    motion_sim_df = pd.read_csv('/vulcanscratch/mukunds/downloads/TMR_old/dtw_scores/all_dtw_0_100.csv')
+    ref_df = pd.read_csv('embeddings.csv')
+    sim_matrix = torch.load('sentence_sim_matrix.pt')
+    sim_matrix = sim_matrix.detach().cpu().numpy()
+    total_motions = 27448
+    all_files = []
     
-    # diffs = []
-    empty_subset = []
-    # for i, keyid in tqdm(enumerate(motion_samples.keys())):
-    counter = 0
-    for i, keyid in enumerate(motion_samples.keys()):
-
-        pos_motion_samples = motion_samples[keyid]['positive_sample_keyids']
-        pos_text_samples = text_samples[keyid]['positive_sample_keyids']
-        
-        # if len(pos_text_samples) == 1:
-            # print(f"keyid: {keyid}, pos_sample: {pos_text_samples}")
-
-        common = [common_id for common_id in pos_motion_samples if common_id in pos_text_samples]
-        if len(common) == 0:
-            empty_subset.append(keyid)
-        
-        if i == 49:
-            break
-        # diffs.append(max(len(pos_motion_samples) - len(common), len(pos_text_samples) - len(common)))
+    for i in range(0, total_motions, 75):
+        all_files.append(f'all_dtw_{i}_{min(i+75, 27448)}.csv')
     
-    for keyid in empty_subset:
-        print(f"Motion annotation: {ref_df[ref_df['keyids'] == keyid].iloc[0]['annotations']}")
-        get_most_similar_text(keyid, ref_df, motion_sim_df, text_sim_matrix)
-        get_most_similar_motion(keyid, ref_df, motion_sim_df, text_sim_matrix)
-        print()
+    all_files_idx = -1
+    samples_dict = {}
+    for i, row in tqdm(ref_df.iterrows(), total=ref_df.shape[0]):
+        anchor_keyid = row['keyids']
+        anchor_motion_path = row['motion path']
+        if i % 75 == 0:
+            all_files_idx += 1
+            # curr_file = all_files[all_files_idx]
+            curr_file = pd.read_csv(f'../TMR_old/dtw_scores/{all_files[all_files_idx]}')
+        
+        pos_sample_idx, neg_sample_idx = get_tm_samples(i, curr_file, sim_matrix)
+        
+        positive_keyids = ref_df['keyids'].iloc[pos_sample_idx].tolist()
+        negative_keyids = ref_df['keyids'].iloc[neg_sample_idx].tolist()
 
-    print(f"number of samples: {len(empty_subset)} / {50}")
-    print(f"counter: {counter}")
+        positive_motion_paths = ref_df['motion path'].iloc[pos_sample_idx].tolist()
+        negative_motion_paths = ref_df['motion path'].iloc[neg_sample_idx].tolist()
 
-    # print(f"mean max diff b/w sample sets: {np.mean(diffs)}")
-    # print(f"there are {len(empty_subset)} keyids with no positive sample")
+        samples_dict[anchor_keyid] = {
+            "anchor_motion_path": anchor_motion_path,
+
+            "positive_sample_keyids": positive_keyids,
+            # "positive_sample_distances": positive_distances.to_list(),
+            "positive_sample_motion_paths": positive_motion_paths,
+
+            "negative_sample_keyids": negative_keyids,
+            # "negative_sample_distances": negative_distances.to_list(),
+            "negative_sample_motion_paths": negative_motion_paths
+        }
+    
+    with open(f"samples_both.json", "w") as outfile:
+        json.dump(samples_dict, outfile)
+    
+    return
+    
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--threshold', help='Similarity score threshold to use when generating samples', type=float, default=0.95)

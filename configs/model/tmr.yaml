@@ -8,16 +8,17 @@ lmd:
   recons: 1.0
   latent: 1.0e-5
   kl: 1.0e-5
-  contrastive: 0.1
-  dtw: 0.1
+  contrastive: 0.9
+  dtw: 0.9
 
 lr: 1e-4
 temperature: 0.1
 threshold_selfsim: 0.80
 threshold_selfsim_metrics: 0.95
 log_wandb: True
-use_dtw: False
-dtw_loss_type: "euclidean"
-dtw_margin: 0.1
-wandb_name: "TMR"
+use_dtw: True
+use_contrastive: False
+dtw_loss_type: "cosine"
+dtw_margin: 0.15
+wandb_name: "adjusted_scores"
 run_dir: tmr_humanml3d_guoh3dfeats

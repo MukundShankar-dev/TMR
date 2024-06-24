@@ -2,10 +2,11 @@ import pandas as pd
 import argparse
 import os
 import ast
+import json
 
 def get_metrics(direction, protocol):
     vanilla_file_path = f'old_outputs/tmr_humanml3d_guoh3dfeats_vanilla_model/contrastive_metrics_2/{direction}_{protocol}_keyid_metrics.csv'
-    ours_file_path = f'old_outputs/tmr_cos_loss_0.15/contrastive_metrics_2/{direction}_{protocol}_keyid_metrics.csv'
+    ours_file_path = f'outputs/no_contrastive/contrastive_metrics_2/{direction}_{protocol}_keyid_metrics.csv'
 
     vanilla_df = pd.read_csv(vanilla_file_path)
     ours_df = pd.read_csv(ours_file_path)
@@ -26,12 +27,28 @@ def get_metrics(direction, protocol):
 
     return new_df
 
-def save_annotations(df, filename):
+def save_annotations(df, filename, retrieval_file):
+    ref_df = pd.read_csv('embeddings.csv')
+    
     with open(f'comparitive_metrics/annotations/{filename}.txt', 'w') as file:
+        # breakpoint()
         for idx, row in df.iterrows():
             annotations_lst = ast.literal_eval(row['annotations'])
-            for annotation in annotations_lst:
-                file.write(f'{annotation}\n')
+            file.write('anchor:\n')
+            # for annotation in annotations_lst:
+                # file.write(f'{annotation}\n')
+            file.write(annotations_lst[0])
+            file.write('\n')
+            file.write('retrieved:\n')
+            # breakpoint()
+            # print(row['keyid'])
+            try:
+                file.write(ref_df[ref_df['keyids'] == retrieval_file[row['keyid']]].iloc[0]['annotations'])
+            except:
+                # print(f"keyid: {row['keyid']}")
+                # exit()
+                pass
+            file.write('\n\n')
     return
 
 def process_metrics(direction, protocol):
@@ -44,10 +61,14 @@ def process_metrics(direction, protocol):
     neither = df[(df['vanilla_R01'] == False) & (df['ours_R01'] == False)]
     # breakpoint()
 
-    save_annotations(both, f"{direction}_{protocol}_both")
-    save_annotations(only_vanilla, f"{direction}_{protocol}_vanilla")
-    save_annotations(only_ours, f"{direction}_{protocol}_ours")
-    save_annotations(neither, f"{direction}_{protocol}_neither")
+    retrieved_items_dict = f"{protocol}_{direction}_retrievals"
+    with open(f"outputs/no_contrastive/contrastive_metrics_2/{retrieved_items_dict}") as file:
+        retrieval_file = json.load(file)
+
+    save_annotations(both, f"{direction}_{protocol}_both", retrieval_file)
+    save_annotations(only_vanilla, f"{direction}_{protocol}_vanilla", retrieval_file)
+    save_annotations(only_ours, f"{direction}_{protocol}_ours", retrieval_file)
+    save_annotations(neither, f"{direction}_{protocol}_neither", retrieval_file)
 
     print(f'saved files for {direction}, {protocol}')
     # print(f"both: {both.shape[0]/ df.shape[0]}")

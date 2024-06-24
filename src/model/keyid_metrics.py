@@ -29,14 +29,15 @@ def all_contrastive_metrics(
     if emb is not None:
         text_selfsim = emb @ emb.T
 
-    t2m_m, t2m_keyid_metrics, t2m_cols = contrastive_metrics(
+    t2m_m, t2m_keyid_metrics, t2m_cols, top_t2m_retrievals = contrastive_metrics(
         sims, keyids, text_selfsim, threshold, return_cols=True, rounding=rounding
     )
-    m2t_m, m2t_keyid_metrics, m2t_cols = contrastive_metrics(
+    m2t_m, m2t_keyid_metrics, m2t_cols, top_m2t_retrievals = contrastive_metrics(
         sims.T, keyids, text_selfsim, threshold, return_cols=True, rounding=rounding
     )
 
     keyid_metrics = {"t2m": t2m_keyid_metrics, "m2t": m2t_keyid_metrics}
+    retrieved = {"t2m_retrievals": top_t2m_retrievals, "m2t_retrievals": top_m2t_retrievals}
 
     all_m = {}
     for key in t2m_m:
@@ -47,7 +48,7 @@ def all_contrastive_metrics(
     all_m["m2t/len"] = float(len(sims[0]))
     if return_cols:
         return all_m, t2m_cols, m2t_cols, keyid_metrics
-    return all_m, keyid_metrics
+    return all_m, keyid_metrics, top_t2m_retrievals, top_m2t_retrievals
 
 
 def contrastive_metrics(
@@ -67,6 +68,8 @@ def contrastive_metrics(
     sorted_dists = np.sort(dists, axis=1)
     # GT is in the diagonal
     gt_dists = np.diag(dists)[:, None]
+
+    top_retrieval_indices = np.argmin(dists, axis=1)
 
     if text_selfsim is not None and threshold is not None:
         real_threshold = 2 * threshold - 1
@@ -93,7 +96,7 @@ def contrastive_metrics(
 
     metrics, keyid_metrics = cols2metrics(cols, num_queries,keyids, rounding=rounding)
     if return_cols:
-        return metrics, keyid_metrics, cols
+        return metrics, keyid_metrics, cols, top_retrieval_indices
     return metrics, keyid_metrics
 
 

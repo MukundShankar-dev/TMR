@@ -153,7 +153,7 @@ def retrieval(newcfg: DictConfig) -> None:
             all_metrics = []
             for x in result:
                 sim_matrix = x["sim_matrix"]
-                metrics, keyid_metrics = all_contrastive_metrics(sim_matrix, dataset.keyids, rounding=None)
+                metrics, keyid_metrics, t2m_retrievals, m2t_retrievals = all_contrastive_metrics(sim_matrix, dataset.keyids, rounding=None)
                 all_metrics.append(metrics)
 
             avg_metrics = {}
@@ -174,13 +174,29 @@ def retrieval(newcfg: DictConfig) -> None:
                 protocol_name = protocol + f"_{threshold}"
             else:
                 emb, threshold = None, None
-            metrics, keyid_metrics = all_contrastive_metrics(sim_matrix, dataset.keyids, emb, threshold=threshold)
+            metrics, keyid_metrics, t2m_retrievals, m2t_retrievals = all_contrastive_metrics(sim_matrix, dataset.keyids, emb, threshold=threshold)
 
         print_latex_metrics(metrics)
 
         with open(f"{save_dir}/{protocol_name}_keyid_metrics.json", 'w') as file:
             json.dump(keyid_metrics, file)
-            
+
+        t2m_retrieval_dict = {}
+        for idx, retrieved in enumerate(t2m_retrievals):
+            anchor_keyid = dataset.keyids[idx]
+            retrieved = dataset.keyids[retrieved]
+            t2m_retrieval_dict[anchor_keyid] = retrieved
+        with open(f"{save_dir}/{protocol_name}_t2m_retrievals", 'w') as file:
+            json.dump(t2m_retrieval_dict, file)
+
+        m2t_retrieval_dict = {}
+        for idx, retrieved in enumerate(m2t_retrievals):
+            anchor_keyid = dataset.keyids[idx]
+            retrieved = dataset.keyids[retrieved]
+            m2t_retrieval_dict[anchor_keyid] = retrieved
+        with open(f"{save_dir}/{protocol_name}_m2t_retrievals", 'w') as file:
+            json.dump(m2t_retrieval_dict, file)
+
 
         metric_name = f"{protocol_name}.yaml"
         path = os.path.join(save_dir, metric_name)
