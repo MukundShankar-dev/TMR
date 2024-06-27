@@ -5,6 +5,7 @@ import argparse
 import json
 import torch
 import numpy as np
+import random
 
 '''
 Generate positive samples and negative samples in a json file. 
@@ -270,26 +271,58 @@ def get_most_similar_motion(keyid, ref_df, motion_sim_df, text_sim_matrix):
 #     # print(f"mean max diff b/w sample sets: {np.mean(diffs)}")
 #     # print(f"there are {len(empty_subset)} keyids with no positive sample")
 
+# def get_tm_samples(idx, distances, similarities):
+#     filtered_distances = distances[distances['i'] == idx]
+#     motion_ranks = filtered_distances.sort_values(by='distance').index.tolist()
+#     motion_ranks = np.array(motion_ranks)
+#     motion_ranks = motion_ranks + 1
+#     motion_ranks = np.argsort(motion_ranks)
+#     motion_ranks = motion_ranks + 1
+#     # print(f"length of sorted motion sample indices: {motion_ranks.shape}")
+
+#     sims = -similarities[idx]
+#     text_ranks = np.argsort(sims)
+#     text_ranks = text_ranks + 1
+#     text_ranks = np.argsort(sims)
+#     text_ranks = text_ranks + 1
+#     # print(f"length of text_ranks: {text_ranks.shape}")
+
+#     combined_ranks = motion_ranks + text_ranks
+#     combined_ranks_idx = np.argsort(combined_ranks)
+#     pos_samples = combined_ranks_idx[1:21]
+
+#     ### Do 2-5%, 5-8%, 10-13%
+
+#     # neg_sample_slice = combined_ranks[548:1372] # 2-5%
+#     index_range = np.arange(548, 1372)
+#     neg_sample_indices = np.random.choice(index_range, 20, replace=False)
+#     neg_samples = combined_ranks[neg_sample_indices]
+
+#     breakpoint()
+    
+#     return pos_samples, neg_samples
+
 def get_tm_samples(idx, distances, similarities):
     filtered_distances = distances[distances['i'] == idx]
-    motion_ranks = filtered_distances.sort_values(by='distance').index.tolist()
-    motion_ranks = np.array(motion_ranks)
-    motion_ranks = motion_ranks + 1
-    motion_ranks = np.argsort(motion_ranks)
-    motion_ranks = motion_ranks + 1
-    # print(f"length of sorted motion sample indices: {motion_ranks.shape}")
+    motion_ranks = filtered_distances['distance'].argsort().argsort() + 1
 
     sims = -similarities[idx]
-    text_ranks = np.argsort(sims)
-    text_ranks = text_ranks + 1
-    text_ranks = np.argsort(sims)
-    # print(f"length of text_ranks: {text_ranks.shape}")
+    text_ranks = np.argsort(sims).argsort() + 1
 
     combined_ranks = motion_ranks + text_ranks
-    combined_ranks_idx = np.argsort(combined_ranks)
-    pos_samples = combined_ranks_idx[1:21]
-    neg_samples = combined_ranks_idx[-20:]
-    return pos_samples, neg_samples
+
+    combined_ranks_idx = np.argsort(combined_ranks)[1:21]
+
+    sorted_indices_by_rank = np.argsort(combined_ranks)
+    num_elements = len(combined_ranks)
+    # 2-5, 5-8, 10-13 for negative samples. Positives are always the 20 best
+    second_percentile_idx = int(0.1 * num_elements)
+    fifth_percentile_idx = int(0.13 * num_elements)
+
+    percentile_index_range = sorted_indices_by_rank[second_percentile_idx:fifth_percentile_idx]
+    neg_sample_indices = np.random.choice(percentile_index_range, 20, replace=False)
+    return combined_ranks_idx, neg_sample_indices
+
 
 
 def gen_samples_both():

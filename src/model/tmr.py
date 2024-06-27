@@ -216,6 +216,8 @@ class TMR(TEMOS):
             # make sure shapes of these are the same
             losses["dtw"] = self.dtw_loss_fn(m_latents, pos_latents, neg_latents)
         
+        losses["new_loss"] = self.contrastive_loss_fn(m_latents, pos_latents)
+
         # Weighted average of the losses
         losses["loss"] = sum(
             self.lmd[x] * val for x, val in losses.items() if x in self.lmd

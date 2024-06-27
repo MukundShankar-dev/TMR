@@ -28,8 +28,8 @@ def train(cfg: DictConfig):
     pl.seed_everything(cfg.seed)
 
     logger.info("Loading the dataloaders")
-    train_dataset = instantiate(cfg.data, split="train")
-    val_dataset = instantiate(cfg.data, split="val")
+    train_dataset = instantiate(cfg.data, split="train", lower_neg_sample=cfg.lower, upper_neg_sample=cfg.upper)
+    val_dataset = instantiate(cfg.data, split="val", lower_neg_sample=cfg.lower, upper_neg_sample=cfg.upper)
 
     train_dataloader = instantiate(
         cfg.dataloader,

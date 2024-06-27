@@ -83,6 +83,7 @@ def retrieval(newcfg: DictConfig) -> None:
     import src.prepare  # noqa
 
     cfg = read_config(run_dir)
+    cfg.log_wandb = False
 
     import pytorch_lightning as pl
     import numpy as np

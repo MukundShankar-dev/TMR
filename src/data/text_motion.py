@@ -25,8 +25,8 @@ def load_annotations(path, name="annotations.json"):
     with open(json_path, "rb") as ff:
         return orjson.loads(ff.read())
 
-def load_samples():
-    json_path = "/vulcanscratch/mukunds/downloads/TMR/samples_both.json"
+def load_samples(lower, upper):
+    json_path = f"/vulcanscratch/mukunds/downloads/TMR/samples_both_{lower}_{upper}.json"
     with open(json_path, "rb") as ff:
         return orjson.loads(ff.read())
 
@@ -44,9 +44,14 @@ class TextMotionDataset(Dataset):
         preload: bool = True,
         tiny: bool = False,
         use_dtw: bool = True,
+        lower_neg_sample: int = 5,
+        upper_neg_sample: int = 8
     ):
         if tiny:
             split = split + "_tiny"
+
+        self.lower = lower_neg_sample
+        self.upper = upper_neg_sample
 
         self.collate_fn = collate_text_motion
         self.split = split
@@ -61,7 +66,7 @@ class TextMotionDataset(Dataset):
 
         self.use_dtw = use_dtw
         if self.use_dtw:
-            self.samples = load_samples()
+            self.samples = load_samples(self.lower, self.upper)
 
         # remove too short or too long annotations
         self.annotations = load_annotations(path)

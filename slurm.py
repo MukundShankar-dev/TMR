@@ -66,8 +66,13 @@ print("Output Directory: %s" % output_dir)
 # all_lmd_dtw = [0.1, 0.25, 0.5, 0.75, 0.9]
 # params = list(product(all_lmd_contrastive, all_lmd_dtw))
 
+# NOTE: USE FOR RUNNING SWEEP ON DTW LMD WEIGHT SWEEP
+params = [10.0, 5.0, 25.0, 40.0, 50.0, 75.0, 100.0]
+
 # NOTE: USE FOR RUNNING MARGIN HYPERMARAMETER SWEEP
 # params = [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.5]
+
+# params = [(2, 5), (5, 8), (10, 13)]
 
 pca = True              
 temporal_skip = None
@@ -77,6 +82,7 @@ with open(f'{args.base_dir}/output/{args.env}/now.txt', "w") as nowfile,\
      open(f'{args.base_dir}/output/{args.env}/err.txt', "w") as error_namefile,\
      open(f'{args.base_dir}/output/{args.env}/name.txt', "w") as namefile:
     
+    # NOTE: if using both losses, to jointly tune both
     # for lmd_contrastive, lmd_dtw in params:
     #     now = datetime.now()
     #     datetimestr = now.strftime("%m%d_%H%M:%S.%f")
@@ -95,6 +101,28 @@ with open(f'{args.base_dir}/output/{args.env}/now.txt', "w") as nowfile,\
     #     output_namefile.write(f'{(os.path.join(output_dir, name))}_log.txt\n')
     #     error_namefile.write(f'{(os.path.join(output_dir, name))}_error.txt\n')
 
+    # NOTE: to tune lmd DTW
+    for lmd_weight in params:
+        now = datetime.now()
+        datetimestr = now.strftime("%m%d_%H%M:%S.%f")
+        
+        name = f'dtw_lmd_{lmd_weight}'
+
+        cmd = f'python train.py run_dir=outputs/{name} '
+        cmd += f'model.run_dir=outputs/{name} '
+        cmd += f'model.lmd.dtw={lmd_weight} model.lmd.contrastive=0.0 '
+        cmd += 'model.dtw_loss_type=\"cosine\" model.use_dtw=True '
+        cmd += f'model.dtw_margin=0.15 model.use_contrastive=False '
+
+        cmd += f'lower=5 upper=8 '
+        cmd += f'model.wandb_name=\"{name}\"'
+        
+        nowfile.write(f'{cmd}\n')
+        namefile.write(f'{(os.path.join(output_dir, name))}.log\n')
+        output_namefile.write(f'{(os.path.join(output_dir, name))}_log.txt\n')
+        error_namefile.write(f'{(os.path.join(output_dir, name))}_error.txt\n')
+
+    # NOTE: to tune triplet loss margin
     # for margin in params:
     #     now = datetime.now()
     #     datetimestr = now.strftime("%m%d_%H%M:%S.%f")
@@ -112,18 +140,21 @@ with open(f'{args.base_dir}/output/{args.env}/now.txt', "w") as nowfile,\
     #     output_namefile.write(f'{(os.path.join(output_dir, name))}_log.txt\n')
     #     error_namefile.write(f'{(os.path.join(output_dir, name))}_error.txt\n')
 
-        now = datetime.now()
-        datetimestr = now.strftime("%m%d_%H%M:%S.%f")
-            
-        name = f'adjusted_scores'
-        cmd = f'python train.py run_dir=outputs/adjusted_scores '
-        cmd += f'model.run_dir=outputs/adjusted_scores '
-        cmd += f'model.wandb_name=\"adjusted_scores\"'
-            
-        nowfile.write(f'{cmd}\n')
-        namefile.write(f'{(os.path.join(output_dir, name))}.log\n')
-        output_namefile.write(f'{(os.path.join(output_dir, name))}_log.txt\n')
-        error_namefile.write(f'{(os.path.join(output_dir, name))}_error.txt\n')
+    # NOTE: to tune negative lower and upper
+    # for lower, upper in params:
+    #     now = datetime.now()
+    #     datetimestr = now.strftime("%m%d_%H%M:%S.%f")
+
+    #     name = f'neg_{lower}_{upper}'
+    #     cmd = f'python train.py run_dir=outputs/{name} '
+    #     cmd += f'model.run_dir=outputs/{name} '
+    #     cmd += f'model.lmd.dtw=5.0 model.lmd.contrastive=0 model.dtw_loss_type=\"cosine\" '
+    #     cmd += f'model.use_dtw=True model.dtw_margin=0.15 model.wandb_name={name} model.use_contrastive=False '
+    #     cmd += f'lower={lower} upper={upper}'
+    #     nowfile.write(f'{cmd}\n')
+    #     namefile.write(f'{(os.path.join(output_dir, name))}.log\n')
+    #     output_namefile.write(f'{(os.path.join(output_dir, name))}_log.txt\n')
+    #     error_namefile.write(f'{(os.path.join(output_dir, name))}_error.txt\n')
 
 ###########################################################################
 # Make a {name}.slurm file in the {output_dir} which defines this job.
@@ -137,8 +168,8 @@ slurm_command = "sbatch %s" % slurm_script_path
 # Make the .slurm file
 with open(slurm_script_path, 'w') as slurmfile:
     slurmfile.write("#!/bin/bash\n")
-    # slurmfile.write(f"#SBATCH --array=1-{len(params)}\n")
-    slurmfile.write(f"#SBATCH --array=1-{1}\n")
+    slurmfile.write(f"#SBATCH --array=1-{len(params)}\n")
+    # slurmfile.write(f"#SBATCH --array=1-{1}\n")
     slurmfile.write("#SBATCH --output=/dev/null\n")
     slurmfile.write("#SBATCH --error=/dev/null\n")
     slurmfile.write("#SBATCH --requeue\n")

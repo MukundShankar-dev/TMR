@@ -3,6 +3,9 @@ resume_dir: null
 
 run_dir: outputs/${hydra:runtime.choices.model}_${hydra:runtime.choices.data}_${hydra:runtime.choices.data/motion_loader}
 
+lower: 5
+upper: 8
+
 dataloader:
   _target_: torch.utils.data.DataLoader
   batch_size: 32

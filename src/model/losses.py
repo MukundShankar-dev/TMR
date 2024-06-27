@@ -63,8 +63,9 @@ class DTWLoss:
     def __call__(self, anchor_latent, positive_latent, negative_latent):
         triplet_loss = 0
 
-        # x_logits = torch.nn.functional.normalize(x, dim=-1)
-        # y_logits = torch.nn.functional.normalize(y, dim=-1)
+        # anchor_logits = torch.nn.functional.normalize(anchor_latent, dim=-1)
+        # pos_logits = torch.nn.functional.normalize(positive_latent, dim=-1)
+        # neg_lotis = torch.nn.functional.normalize(negative_latent, dim=-1)
 
         # The margin on our runs before 25/05/2024 which use this term were 1.0
         triplet_loss = nn.TripletMarginLoss(margin = self.margin, p=2, eps=1e-7)
@@ -76,7 +77,6 @@ class TripletLossCosine:
         self.margin = margin
 
     def __call__(self, anchor, positive, negative):
-        cos_sim = F.cosine_similarity
 
         pos_similarity = F.cosine_similarity(anchor, positive)
         neg_similarity = F.cosine_similarity(anchor, negative)
