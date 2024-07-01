@@ -10,7 +10,7 @@ lmd:
   kl: 1.0e-5
   contrastive: 0.9
   dtw: 0.9
-  new_loss: 0.9
+  new_loss: 10.0
 
 lr: 1e-4
 temperature: 0.1

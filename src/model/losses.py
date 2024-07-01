@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import pandas as pd
 
 # For reference
 # https://stats.stackexchange.com/questions/7440/kl-divergence-between-two-univariate-gaussians
@@ -35,6 +36,8 @@ class InfoNCE_with_filtering:
         bs, device = len(x), x.device
         sim_matrix = self.get_sim_matrix(x, y) / self.temperature
 
+        # TODO add a flag here
+        # TODO instead of checking text sim in text, check it in the DTW space
         if sent_emb is not None and self.threshold_selfsim:
             # put the threshold value between -1 and 1
             real_threshold_selfsim = 2 * self.threshold_selfsim - 1

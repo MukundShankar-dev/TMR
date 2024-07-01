@@ -310,10 +310,18 @@ def get_tm_samples(idx, distances, similarities):
     text_ranks = np.argsort(sims).argsort() + 1
 
     combined_ranks = motion_ranks + text_ranks
-
-    combined_ranks_idx = np.argsort(combined_ranks)[1:21]
-
     sorted_indices_by_rank = np.argsort(combined_ranks)
+
+    pos_sample_indices = sorted_indices_by_rank[1:21]
+    pos_motion_distances = []
+    pos_text_distances = []
+    for pos_sample_index in pos_sample_indices:
+        motion_distance = filtered_distances[filtered_distances['j'] == pos_sample_index].iloc[0]['distance']
+        text_distance = similarities[idx][pos_sample_index]
+
+        pos_motion_distances.append(motion_distance)
+        pos_text_distances.append(text_distance)
+
     num_elements = len(combined_ranks)
     # 2-5, 5-8, 10-13 for negative samples. Positives are always the 20 best
     second_percentile_idx = int(0.1 * num_elements)
@@ -321,9 +329,17 @@ def get_tm_samples(idx, distances, similarities):
 
     percentile_index_range = sorted_indices_by_rank[second_percentile_idx:fifth_percentile_idx]
     neg_sample_indices = np.random.choice(percentile_index_range, 20, replace=False)
-    return combined_ranks_idx, neg_sample_indices
+    
+    neg_motion_distances = []
+    neg_text_distances = []
+    for neg_sample_index in neg_sample_indices:
+        motion_distance = filtered_distances[filtered_distances['j'] == neg_sample_index].iloc[0]['distance']
+        text_distance = similarities[idx][neg_sample_index]
 
+        neg_motion_distances.append(motion_distance)
+        neg_text_distances.append(text_distance)
 
+    return pos_sample_indices, neg_sample_indices, pos_motion_distances, pos_text_distances, neg_motion_distances, neg_text_distances
 
 def gen_samples_both():
     ref_df = pd.read_csv('embeddings.csv')
@@ -342,10 +358,9 @@ def gen_samples_both():
         anchor_motion_path = row['motion path']
         if i % 75 == 0:
             all_files_idx += 1
-            # curr_file = all_files[all_files_idx]
             curr_file = pd.read_csv(f'../TMR_old/dtw_scores/{all_files[all_files_idx]}')
         
-        pos_sample_idx, neg_sample_idx = get_tm_samples(i, curr_file, sim_matrix)
+        pos_sample_idx, neg_sample_idx, pos_motion_distances, pos_text_distances, neg_motion_distances, neg_text_distances = get_tm_samples(i, curr_file, sim_matrix)
         
         positive_keyids = ref_df['keyids'].iloc[pos_sample_idx].tolist()
         negative_keyids = ref_df['keyids'].iloc[neg_sample_idx].tolist()
@@ -357,11 +372,13 @@ def gen_samples_both():
             "anchor_motion_path": anchor_motion_path,
 
             "positive_sample_keyids": positive_keyids,
-            # "positive_sample_distances": positive_distances.to_list(),
+            "positive_motion_distance": f"{pos_motion_distances}",
+            "positive_text_distance": f"{pos_text_distances}",
             "positive_sample_motion_paths": positive_motion_paths,
 
             "negative_sample_keyids": negative_keyids,
-            # "negative_sample_distances": negative_distances.to_list(),
+            "negative_motion_distance": f"{neg_motion_distances}",
+            "negative_text_distance": f"{neg_text_distances}",
             "negative_sample_motion_paths": negative_motion_paths
         }
     

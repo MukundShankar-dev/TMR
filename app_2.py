@@ -12,7 +12,7 @@ import argparse
 # parser for the model
 parser = argparse.ArgumentParser()
 parser.add_argument("--run_dir_1", default="old_outputs/tmr_humanml3d_guoh3dfeats_vanilla_model/")
-parser.add_argument("--run_dir_2", default="old_outputs/tmr_cos_loss_0.15")
+parser.add_argument("--run_dir_2", default="outputs/dtw_lmd_10.0")
 args = parser.parse_args()
 MODEL_1_PATH = args.run_dir_1
 MODEL_2_PATH = args.run_dir_2
@@ -248,8 +248,6 @@ def retrieve_component(retrieve_function_1, retrieve_function_2, text, splits_ch
         video_2 = htmls_2[i]
         if video_1 != None:
             html_output += f"<tr><td>{video_1}</td><td>{video_2}</td></tr>"
-            # for video1, video2 in zip(htmls_1, htmls_2):
-                # html_output += f"<tr><td>{video1}</td><td>{video2}</td></tr>"
             html_output += "</table>"
             htmls.append(html_output)
         else:

@@ -1,3 +1,7 @@
+### TODO New run with their contrastive loss, current triplet loss
+### TODO Think about metrics
+### TODO Similarity in InfoNCE based on motion --> motion?
+
 from typing import Dict, Optional
 from torch import Tensor
 
@@ -16,9 +20,6 @@ from ..data.collate import collate_text_motion
 from omegaconf import DictConfig
 import numpy as np
 from hydra.utils import instantiate
-
-# Interpretability stuff, visualize where each model is going wrong
-# Different margins:[0.05, 0.1, 0.2, 0.3, 0.5]
 
 # x.T will be deprecated in pytorch
 def transpose(x):
@@ -65,8 +66,7 @@ class TMR(TEMOS):
         vae: bool,
         fact: Optional[float] = None,
         sample_mean: Optional[bool] = False,
-        # lmd: Dict = {"recons": 1.0, "latent": 1.0e-5, "kl": 1.0e-5, "contrastive": 0.1},
-        lmd: Dict = {"recons": 1.0, "latent": 1.0e-5, "kl": 1.0e-5, "contrastive": 0.1, "dtw": 0.1},
+        lmd: Dict = {"recons": 1.0, "latent": 1.0e-5, "kl": 1.0e-5, "contrastive": 0.1, "dtw": 0.1, "new_loss": 10.0},
         lr: float = 1e-4,
         temperature: float = 0.7,
         threshold_selfsim: float = 0.80,
@@ -92,7 +92,6 @@ class TMR(TEMOS):
             lr=lr,
         )
 
-        # self.lmd = lmd
         config_dict = {
             "lr": lr,
             "temp": temperature,
@@ -138,8 +137,7 @@ class TMR(TEMOS):
         self.validation_step_sent_emb = []
 
         cfg = read_config("/vulcanscratch/mukunds/downloads/TMR/old_outputs/tmr_humanml3d_guoh3dfeats_vanilla_model")
-        # cfg = read_config(f"/vulcanscratch/mukunds/downloads/TMR/{run_dir}")
-        
+
         self.val_datasets = {}
         self.protocols = ["normal", "threshold", "guo", "nsim"]
         for protocol in self.protocols:
@@ -155,6 +153,14 @@ class TMR(TEMOS):
     def compute_loss(self, batch: Dict, return_all=False) -> Dict:
         text_x_dict = batch["text_x_dict"]
         motion_x_dict = batch["motion_x_dict"]
+
+        breakpoint()
+
+        positive_motion_distance = batch["positive_motion_distance"]
+        positive_text_distance = batch["positive_text_distance"]
+
+        negative_motion_distance = batch["negative_motion_distance"]        
+        negative_text_distance = batch["negative text distance"]
 
         positive_sample_x_dict = batch["positive_sample_x_dict"]
         pos_mask = positive_sample_x_dict["mask"]
@@ -208,7 +214,6 @@ class TMR(TEMOS):
 
         # TMR: adding the contrastive loss
         # NOTE no contrastive loss
-
         if self.use_contrastive:
             losses["contrastive"] = self.contrastive_loss_fn(t_latents, m_latents, sent_emb)
 
@@ -216,7 +221,7 @@ class TMR(TEMOS):
             # make sure shapes of these are the same
             losses["dtw"] = self.dtw_loss_fn(m_latents, pos_latents, neg_latents)
         
-        losses["new_loss"] = self.contrastive_loss_fn(m_latents, pos_latents)
+        # losses["new_loss"] = self.contrastive_loss_fn(m_latents, pos_latents)
 
         # Weighted average of the losses
         losses["loss"] = sum(

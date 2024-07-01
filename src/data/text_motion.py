@@ -3,6 +3,7 @@ import codecs as cs
 import orjson  # loading faster than json
 import json
 import random
+import ast
 
 import numpy as np
 from torch.utils.data import Dataset
@@ -99,7 +100,9 @@ class TextMotionDataset(Dataset):
             start=self.annotations[motion_keyid]["annotations"][0]["start"],
             end=self.annotations[motion_keyid]["annotations"][0]["end"],
         )
-        return pos_motion
+        positive_motion_distances = ast.literal_eval(self.samples[keyid]["positive_motion_distances"])
+        positive_text_distances = ast.literal_eval(self.samples[keyid]["positive_text_distance"])
+        return pos_motion, motion_keyid, positive_motion_distances[idx], positive_text_distances[idx]
 
     def get_negative_sample(self, keyid):
         neg_samples = self.samples[keyid]["negative_sample_keyids"]
@@ -111,7 +114,9 @@ class TextMotionDataset(Dataset):
             start=self.annotations[motion_keyid]["annotations"][0]["start"],
             end=self.annotations[motion_keyid]["annotations"][0]["end"],
         )
-        return neg_motion
+        negative_motion_distances = ast.literal_eval(self.samples[keyid]['negative_motion_distances'])
+        negative_text_distances = ast.literal_eval(self.samples[keyid]['negative_text_distances'])
+        return neg_motion, motion_keyid, negative_motion_distances[idx], negative_text_distances[idx]
 
     def __getitem__(self, index):
         keyid = self.keyids[index]
@@ -138,8 +143,8 @@ class TextMotionDataset(Dataset):
         
         if self.use_dtw:
             if self.is_training or self.is_val:
-                positive_sample = self.get_positive_sample(keyid)
-                negative_sample = self.get_negative_sample(keyid)
+                positive_sample, positive_keyid, positive_motion_dist, positive_text_dist  = self.get_positive_sample(keyid)
+                negative_sample, negative_keyid, negative_motion_dist, negative_text_dist = self.get_negative_sample(keyid)
 
                 output = {
                     "motion_x_dict": motion_x_dict,
@@ -148,7 +153,13 @@ class TextMotionDataset(Dataset):
                     "keyid": keyid,
                     "sent_emb": sent_emb,
                     "positive_sample_x_dict": positive_sample,
-                    "negative_sample_x_dict": negative_sample
+                    "negative_sample_x_dict": negative_sample,
+                    "positive_keyid": positive_keyid,
+                    "negative_keyid": negative_keyid,
+                    "positive_motion_distance": positive_motion_dist,
+                    "positive_text_distance": positive_text_dist,
+                    "negative_motion_distance": negative_motion_dist,
+                    "negative_text_distance": negative_text_dist
                 }
             else:
                 output = {
