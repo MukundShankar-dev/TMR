@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pandas as pd
+import os
+import re
 
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
@@ -29,6 +31,16 @@ class InfoNCE_with_filtering:
         self.threshold_selfsim = threshold_selfsim
         self.ref_df = pd.read_csv('/vulcanscratch/mukunds/downloads/TMR/embeddings.csv')
 
+        self.all_dfs = [None] * 366
+        self.df_indices = {}
+        all_files = os.listdir('/vulcanscratch/mukunds/downloads/TMR_old/dtw_scores')
+        pattern = re.compile(r"all_dtw_(\d+)_(\d+)\.csv")
+        extracted_values = [(int(match.group(1)), int(match.group(2))) for file in all_files if (match := pattern.match(file))]
+        
+        for i, file in enumerate(all_files):
+            self.all_dfs[i] = pd.read_csv(f'/vulcanscratch/mukunds/downloads/TMR_old/dtw_scores/{file}')
+            self.df_indices[extracted_values[i][0]] = i
+
     def get_sim_matrix(self, x, y):
         x_logits = torch.nn.functional.normalize(x, dim=-1)
         y_logits = torch.nn.functional.normalize(y, dim=-1)
@@ -41,8 +53,7 @@ class InfoNCE_with_filtering:
         
         for i, keyid1 in enumerate(keyid_idx):
             start = (keyid1 // 75) * 75
-            end = start + 75
-            scores_df = pd.read_csv(f'/vulcanscratch/mukunds/downloads/TMR_old/dtw_scores/all_dtw_{start}_{end}.csv')
+            scores_df = self.all_dfs[self.df_indices[start]]
             for j, keyid2 in enumerate(keyid_idx):
                 if sim_matrix[i][j] != None:
                     distance = scores_df[(scores_df['i'] == keyid1) & (scores_df['j'] == keyid2)].iloc[0]['distance']

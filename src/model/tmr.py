@@ -124,11 +124,13 @@ class TMR(TEMOS):
             )
         self.threshold_selfsim_metrics = threshold_selfsim_metrics
 
+        # self.log("dtw_loss_status", "initializing")
         if self.use_dtw:
             if dtw_loss_type == "euclidean":
                 self.dtw_loss_fn = DTWLoss(dtw_margin)
             elif dtw_loss_type == "cosine":
                 self.dtw_loss_fn = TripletLossCosine(dtw_margin)
+        # self.log("dtw_loss_status", "initialized")
 
         # store validation values to compute retrieval metrics
         # on the whole validation set
