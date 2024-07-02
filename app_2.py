@@ -12,7 +12,7 @@ import argparse
 # parser for the model
 parser = argparse.ArgumentParser()
 parser.add_argument("--run_dir_1", default="old_outputs/tmr_humanml3d_guoh3dfeats_vanilla_model/")
-parser.add_argument("--run_dir_2", default="outputs/dtw_lmd_10.0")
+parser.add_argument("--run_dir_2", default="outputs/tmr_humanml3d_guoh3dfeats")
 args = parser.parse_args()
 MODEL_1_PATH = args.run_dir_1
 MODEL_2_PATH = args.run_dir_2

@@ -18,11 +18,8 @@ def get_metrics(direction, protocol):
     for i in range(num_motions):
         vanilla_row = vanilla_df.iloc[i]
         ours_row = ours_df.iloc[i]
-        # rows are formatted as: keyid,R01,R02,R03,R05,R10,annotations
-
         keyid = vanilla_row['keyid']
         keyid_annotations = vanilla_row['annotations']
-
         new_df.loc[len(df.index)] = [keyid, keyid_annotations, vanilla_row['R01'],ours_row['R01'], vanilla_row['R02'],ours_row['R02'], vanilla_row['R03'],ours_row['R03'], vanilla_row['R05'],ours_row['R05'], vanilla_row['R10'],ours_row['R10']]
 
     return new_df
@@ -31,35 +28,31 @@ def save_annotations(df, filename, retrieval_file):
     ref_df = pd.read_csv('embeddings.csv')
     
     with open(f'comparitive_metrics/annotations/{filename}.txt', 'w') as file:
-        # breakpoint()
         for idx, row in df.iterrows():
             annotations_lst = ast.literal_eval(row['annotations'])
             file.write('anchor:\n')
-            # for annotation in annotations_lst:
-                # file.write(f'{annotation}\n')
             file.write(annotations_lst[0])
             file.write('\n')
             file.write('retrieved:\n')
-            # breakpoint()
-            # print(row['keyid'])
             try:
                 file.write(ref_df[ref_df['keyids'] == retrieval_file[row['keyid']]].iloc[0]['annotations'])
             except:
-                # print(f"keyid: {row['keyid']}")
-                # exit()
                 pass
             file.write('\n\n')
     return
+
+def get_hit_df(df):
+    for idx, row in df.iterrows():
+        ours_hit = row['vanilla_R01']
 
 def process_metrics(direction, protocol):
     file_path = f"combined_metrics/{direction}_{protocol}.csv"
     df = pd.read_csv(file_path)
     
-    both = df[(df['vanilla_R01'] == True) & (df['ours_R01'] == True)]
-    only_vanilla = df[(df['vanilla_R01'] == True) & (df['ours_R01'] == False)]
-    only_ours = df[(df['vanilla_R01'] == False) & (df['ours_R01'] == True)]
-    neither = df[(df['vanilla_R01'] == False) & (df['ours_R01'] == False)]
-    # breakpoint()
+    both = df[(df['vanilla_R10'] == True) & (df['ours_R10'] == True)]
+    only_vanilla = df[(df['vanilla_R10'] == True) & (df['ours_R10'] == False)]
+    only_ours = df[(df['vanilla_R10'] == False) & (df['ours_R10'] == True)]
+    neither = df[(df['vanilla_R10'] == False) & (df['ours_R10'] == False)]
 
     retrieved_items_dict = f"{protocol}_{direction}_retrievals"
     with open(f"outputs/no_contrastive/contrastive_metrics_2/{retrieved_items_dict}") as file:
@@ -71,34 +64,6 @@ def process_metrics(direction, protocol):
     save_annotations(neither, f"{direction}_{protocol}_neither", retrieval_file)
 
     print(f'saved files for {direction}, {protocol}')
-    # print(f"both: {both.shape[0]/ df.shape[0]}")
-    # print(f"vanilla: {only_vanilla.shape[0]/ df.shape[0]}")
-    # print(f"ours: {only_ours.shape[0]/ df.shape[0]}")
-    # print(f"neither: {neither.shape[0]/ df.shape[0]}")
-
-    # print('where both work:')
-    # both_sample = both.sample(5)
-    # for idx, row in both_sample.iterrows():
-    #     annotations = ast.literal_eval(row['annotations'])
-    #     print(annotations[0])
-        
-    # print("\n\n where only the vanilla model works:")
-    # vanilla_sample = only_vanilla.sample(5)
-    # for idx, row in vanilla_sample.iterrows():
-    #     annotations = ast.literal_eval(row['annotations'])
-    #     print(annotations[0])
-
-    # print("\n\n where only our model works:")
-    # ours_sample = only_ours.sample(5)
-    # for idx, row in ours_sample.iterrows():
-    #     annotations = ast.literal_eval(row['annotations'])
-    #     print(annotations[0])
-
-    # print("\n\n where neither of the models work:")
-    # neither_sample = neither.sample(5)
-    # for idx, row in neither_sample.iterrows():
-    #     annotations = ast.literal_eval(row['annotations'])
-    #     print(annotations[0])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -130,4 +95,3 @@ if __name__ == '__main__':
         for direction in directions:
             for protocol in protocols:
                 process_metrics(direction, protocol)
-        # process_metrics("t2m", "threshold_0.95")

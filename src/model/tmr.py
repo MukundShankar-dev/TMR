@@ -11,6 +11,8 @@ from .temos import TEMOS
 from .losses import InfoNCE_with_filtering
 from .losses import DTWLoss
 from .losses import TripletLossCosine
+# from .losses import DifferentiableDTWLoss
+# from .losses import FastDifferentiableDTWLoss
 from .metrics import all_contrastive_metrics
 import wandb
 
@@ -127,8 +129,6 @@ class TMR(TEMOS):
                 self.dtw_loss_fn = DTWLoss(dtw_margin)
             elif dtw_loss_type == "cosine":
                 self.dtw_loss_fn = TripletLossCosine(dtw_margin)
-            else:
-                raise ValueError("Invalid DTW loss type")
 
         # store validation values to compute retrieval metrics
         # on the whole validation set
@@ -154,13 +154,13 @@ class TMR(TEMOS):
         text_x_dict = batch["text_x_dict"]
         motion_x_dict = batch["motion_x_dict"]
 
-        breakpoint()
+        # breakpoint()
 
         positive_motion_distance = batch["positive_motion_distance"]
         positive_text_distance = batch["positive_text_distance"]
 
         negative_motion_distance = batch["negative_motion_distance"]        
-        negative_text_distance = batch["negative text distance"]
+        negative_text_distance = batch["negative_text_distance"]
 
         positive_sample_x_dict = batch["positive_sample_x_dict"]
         pos_mask = positive_sample_x_dict["mask"]
@@ -215,11 +215,14 @@ class TMR(TEMOS):
         # TMR: adding the contrastive loss
         # NOTE no contrastive loss
         if self.use_contrastive:
-            losses["contrastive"] = self.contrastive_loss_fn(t_latents, m_latents, sent_emb)
+            # losses["contrastive"] = self.contrastive_loss_fn(t_latents, m_latents, sent_emb)
+            losses["contrastive"] = self.contrastive_loss_fn(t_latents, m_latents, batch['keyid'], sent_emb)
+            # losses["contrastive"] = self.contrastive_loss_fn(t_latents, pos_latents, sent_emb)
 
         if self.use_dtw:
             # make sure shapes of these are the same
             losses["dtw"] = self.dtw_loss_fn(m_latents, pos_latents, neg_latents)
+            # losses["dtw"] = self.dtw_loss_fn(m_latents, pos_latents)
         
         # losses["new_loss"] = self.contrastive_loss_fn(m_latents, pos_latents)
 

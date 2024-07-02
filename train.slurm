@@ -5,7 +5,7 @@
 #SBATCH --account=scavenger
 #SBATCH --qos scavenger
 #SBATCH --partition scavenger
-#SBATCH --time=48:00:00
+#SBATCH --time=36:00:00
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --gres=gpu:rtx2080ti:1
@@ -16,5 +16,4 @@ source /vulcanscratch/mukunds/anaconda3/bin/activate
 conda activate tmr
 export HYDRA_FULL_ERROR=1
 
-# python train.py run_dir=outputs/new_lmd model.run_dir=outputs/new_lmd model.lmd.dtw=5.0 model.lmd.contrastive=0 model.dtw_loss_type="cosine" model.use_dtw=True model.dtw_margin=0.15 model.wandb_name="new_lmd" model.use_contrastive=False
-python train.py run_dir=outputs/both_losses model.run_dir=outputs/both_losses model.lmd.dtw=0.9 model.lmd.contrastive=0.9 model.dtw_loss_type="cosine" model.use_dtw=True model.dtw_margin=0.15 model.wandb_name="both_losses" model.use_contrastive=True lower=5 upper=8
+python train.py model.lmd.dtw=10.0 model.lmd.contrastive=0.9 model.log_wandb=True model.dtw_loss_type=other model.use_dtw=True model.dtw_margin=0.15 model.use_contrastive=True lower=10 upper=13 model.wandb_name=new_infoNCE_attempt
