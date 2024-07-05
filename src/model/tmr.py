@@ -15,7 +15,6 @@ from .losses import TripletLossCosine
 # from .losses import FastDifferentiableDTWLoss
 from .metrics import all_contrastive_metrics
 import wandb
-
 # from .all_val_metrics import retrieval
 from ..config import read_config
 from ..data.collate import collate_text_motion
@@ -79,7 +78,8 @@ class TMR(TEMOS):
         dtw_loss_type: str = "euclidean",
         dtw_margin: float = 0.1,
         wandb_name: str = "TMR",
-        run_dir: str = "tmr_cos_loss_0.15"
+        run_dir: str = "tmr_cos_loss_0.15",
+        threshold_dtw: int = 200,
     ) -> None:
         
         # Initialize module like TEMOS
@@ -106,6 +106,8 @@ class TMR(TEMOS):
             "epochs": 500,
         }
 
+        self.threshold_dtw = threshold_dtw
+
         for key in lmd:
             config_dict[f"lmd_{key}"] = lmd[key]
 
@@ -120,7 +122,7 @@ class TMR(TEMOS):
         # adding the contrastive loss
         if self.use_contrastive:
             self.contrastive_loss_fn = InfoNCE_with_filtering(
-                temperature=temperature, threshold_selfsim=threshold_selfsim
+                temperature=temperature, threshold_selfsim=threshold_selfsim, threshold_dtw=threshold_dtw
             )
         self.threshold_selfsim_metrics = threshold_selfsim_metrics
 
