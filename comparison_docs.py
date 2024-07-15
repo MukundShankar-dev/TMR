@@ -6,7 +6,7 @@ import json
 
 def get_metrics(direction, protocol):
     vanilla_file_path = f'old_outputs/tmr_humanml3d_guoh3dfeats_vanilla_model/contrastive_metrics_2/{direction}_{protocol}_keyid_metrics.csv'
-    ours_file_path = f'outputs/no_contrastive/contrastive_metrics_2/{direction}_{protocol}_keyid_metrics.csv'
+    ours_file_path = f'outputs/new_infonce/contrastive_metrics_2/{direction}_{protocol}_keyid_metrics.csv'
 
     vanilla_df = pd.read_csv(vanilla_file_path)
     ours_df = pd.read_csv(ours_file_path)
@@ -55,7 +55,7 @@ def process_metrics(direction, protocol):
     neither = df[(df['vanilla_R10'] == False) & (df['ours_R10'] == False)]
 
     retrieved_items_dict = f"{protocol}_{direction}_retrievals"
-    with open(f"outputs/no_contrastive/contrastive_metrics_2/{retrieved_items_dict}") as file:
+    with open(f"outputs/new_infonce/contrastive_metrics_2/{retrieved_items_dict}") as file:
         retrieval_file = json.load(file)
 
     save_annotations(both, f"{direction}_{protocol}_both", retrieval_file)

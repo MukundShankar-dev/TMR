@@ -12,7 +12,7 @@ import argparse
 # parser for the model
 parser = argparse.ArgumentParser()
 parser.add_argument("--run_dir_1", default="old_outputs/tmr_humanml3d_guoh3dfeats_vanilla_model/")
-parser.add_argument("--run_dir_2", default="outputs/tmr_humanml3d_guoh3dfeats")
+parser.add_argument("--run_dir_2", default="outputs/new_infonce")
 args = parser.parse_args()
 MODEL_1_PATH = args.run_dir_1
 MODEL_2_PATH = args.run_dir_2

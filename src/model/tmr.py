@@ -121,9 +121,13 @@ class TMR(TEMOS):
 
         # adding the contrastive loss
         if self.use_contrastive:
-            self.contrastive_loss_fn = InfoNCE_with_filtering(
-                temperature=temperature, threshold_selfsim=threshold_selfsim, threshold_dtw=threshold_dtw
+            self.text_contrastive_loss_fn = InfoNCE_with_filtering(
+                temperature=temperature, threshold_selfsim=threshold_selfsim, threshold_dtw=threshold_dtw, mode="text"
             )
+            self.motion_contrastive_loss_fn = InfoNCE_with_filtering(
+                temperature=temperature, threshold_selfsim=threshold_selfsim, threshold_dtw=threshold_dtw, mode="motion"
+            )
+
         self.threshold_selfsim_metrics = threshold_selfsim_metrics
 
         # self.log("dtw_loss_status", "initializing")
@@ -220,7 +224,8 @@ class TMR(TEMOS):
         # NOTE no contrastive loss
         if self.use_contrastive:
             # losses["contrastive"] = self.contrastive_loss_fn(t_latents, m_latents, sent_emb)
-            losses["contrastive"] = self.contrastive_loss_fn(t_latents, m_latents, batch['keyid'], sent_emb)
+            losses["text_contrastive"] = self.text_contrastive_loss_fn(t_latents, m_latents, batch['keyid'], sent_emb)
+            losses["motion_contrastive"] = self.motion_contrastive_loss_fn(t_latents, m_latents, batch['keyid'], sent_emb)
             # losses["contrastive"] = self.contrastive_loss_fn(t_latents, pos_latents, sent_emb)
 
         if self.use_dtw:
