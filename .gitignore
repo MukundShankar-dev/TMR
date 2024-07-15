@@ -9,7 +9,8 @@ sentence_sim_matrix.pt
 combined_metrics
 comparitive_metrics
 samples_*
-
+dtw_scores.*
+train.*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

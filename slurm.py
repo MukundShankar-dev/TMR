@@ -67,12 +67,14 @@ print("Output Directory: %s" % output_dir)
 # params = list(product(all_lmd_contrastive, all_lmd_dtw))
 
 # NOTE: USE FOR RUNNING SWEEP ON DTW LMD WEIGHT SWEEP
-params = [10.0, 5.0, 25.0, 40.0, 50.0, 75.0, 100.0]
+# params = [10.0, 5.0, 25.0, 40.0, 50.0, 75.0, 100.0]
 
 # NOTE: USE FOR RUNNING MARGIN HYPERMARAMETER SWEEP
 # params = [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.5]
 
 # params = [(2, 5), (5, 8), (10, 13)]
+
+params = [50, 100, 200, 300, 400, 500]
 
 pca = True              
 temporal_skip = None
@@ -102,25 +104,25 @@ with open(f'{args.base_dir}/output/{args.env}/now.txt', "w") as nowfile,\
     #     error_namefile.write(f'{(os.path.join(output_dir, name))}_error.txt\n')
 
     # NOTE: to tune lmd DTW
-    for lmd_weight in params:
-        now = datetime.now()
-        datetimestr = now.strftime("%m%d_%H%M:%S.%f")
+    # for lmd_weight in params:
+    #     now = datetime.now()
+    #     datetimestr = now.strftime("%m%d_%H%M:%S.%f")
         
-        name = f'dtw_lmd_{lmd_weight}'
+    #     name = f'dtw_lmd_{lmd_weight}'
 
-        cmd = f'python train.py run_dir=outputs/{name} '
-        cmd += f'model.run_dir=outputs/{name} '
-        cmd += f'model.lmd.dtw={lmd_weight} model.lmd.contrastive=0.0 '
-        cmd += 'model.dtw_loss_type=\"cosine\" model.use_dtw=True '
-        cmd += f'model.dtw_margin=0.15 model.use_contrastive=False '
+    #     cmd = f'python train.py run_dir=outputs/{name} '
+    #     cmd += f'model.run_dir=outputs/{name} '
+    #     cmd += f'model.lmd.dtw={lmd_weight} model.lmd.contrastive=0.0 '
+    #     cmd += 'model.dtw_loss_type=\"cosine\" model.use_dtw=True '
+    #     cmd += f'model.dtw_margin=0.15 model.use_contrastive=False '
 
-        cmd += f'lower=5 upper=8 '
-        cmd += f'model.wandb_name=\"{name}\"'
+    #     cmd += f'lower=5 upper=8 '
+    #     cmd += f'model.wandb_name=\"{name}\"'
         
-        nowfile.write(f'{cmd}\n')
-        namefile.write(f'{(os.path.join(output_dir, name))}.log\n')
-        output_namefile.write(f'{(os.path.join(output_dir, name))}_log.txt\n')
-        error_namefile.write(f'{(os.path.join(output_dir, name))}_error.txt\n')
+    #     nowfile.write(f'{cmd}\n')
+    #     namefile.write(f'{(os.path.join(output_dir, name))}.log\n')
+    #     output_namefile.write(f'{(os.path.join(output_dir, name))}_log.txt\n')
+    #     error_namefile.write(f'{(os.path.join(output_dir, name))}_error.txt\n')
 
     # NOTE: to tune triplet loss margin
     # for margin in params:
@@ -155,6 +157,21 @@ with open(f'{args.base_dir}/output/{args.env}/now.txt', "w") as nowfile,\
     #     namefile.write(f'{(os.path.join(output_dir, name))}.log\n')
     #     output_namefile.write(f'{(os.path.join(output_dir, name))}_log.txt\n')
     #     error_namefile.write(f'{(os.path.join(output_dir, name))}_error.txt\n')
+
+    for dtw_thresh in params:
+        now = datetime.now()
+        datetimestr = now.strftime("%m%d_%H%M:%S.%f")
+
+        name = f'dtw_threshold_{dtw_thresh}'
+        cmd = f'python train.py run_dir=outputs/dtw_threshold_{dtw_thresh} '
+        cmd += f'model.run_dir=outputs/dtw_threshold_{dtw_thresh} '
+        cmd += f'model.lmd.dtw=0.9 model.lmd.contrastive=0.9 model.dtw_loss_type=\"cosine\" '
+        cmd += f'model.use_dtw=True model.dtw_margin=0.15 model.wandb_name={name} model.use_contrastive=False '
+        cmd += f'lower=10 upper=13 threshold_dtw={dtw_thresh}'
+        nowfile.write(f'{cmd}\n')
+        namefile.write(f'{(os.path.join(output_dir, name))}.log\n')
+        output_namefile.write(f'{(os.path.join(output_dir, name))}_log.txt\n')
+        error_namefile.write(f'{(os.path.join(output_dir, name))}_error.txt\n')
 
 ###########################################################################
 # Make a {name}.slurm file in the {output_dir} which defines this job.

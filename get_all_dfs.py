@@ -41,6 +41,7 @@ def save_dfs_to_pt():
 
             distance = row['distance']
             torch_matrix[i][j] = distance
+    torch.save(torch_matrix, 'dtw_scores.pt')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

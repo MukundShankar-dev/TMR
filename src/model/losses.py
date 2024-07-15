@@ -38,15 +38,16 @@ class InfoNCE_with_filtering:
         self.threshold_dtw = threshold_dtw
         self.ref_df = pd.read_csv('/vulcanscratch/mukunds/downloads/TMR/embeddings.csv')
 
-        self.all_dfs = [None] * 366
-        self.df_indices = {}
-        all_files = os.listdir('/vulcanscratch/mukunds/downloads/TMR_old/dtw_scores')
-        pattern = re.compile(r"all_dtw_(\d+)_(\d+)\.csv")
-        extracted_values = [(int(match.group(1)), int(match.group(2))) for file in all_files if (match := pattern.match(file))]
+        self.all_scores = torch.load('/vulcanscratch/mukunds/downloads/TMR/dtw_scores.pt')
+        # self.all_dfs = [None] * 366
+        # self.df_indices = {}
+        # all_files = os.listdir('/vulcanscratch/mukunds/downloads/TMR_old/dtw_scores')
+        # pattern = re.compile(r"all_dtw_(\d+)_(\d+)\.csv")
+        # extracted_values = [(int(match.group(1)), int(match.group(2))) for file in all_files if (match := pattern.match(file))]
         
-        for i, file in enumerate(all_files):
-            self.all_dfs[i] = pd.read_csv(f'/vulcanscratch/mukunds/downloads/TMR_old/dtw_scores/{file}')
-            self.df_indices[extracted_values[i][0]] = i
+        # for i, file in enumerate(all_files):
+            # self.all_dfs[i] = pd.read_csv(f'/vulcanscratch/mukunds/downloads/TMR_old/dtw_scores/{file}')
+            # self.df_indices[extracted_values[i][0]] = i
 
     def get_sim_matrix(self, x, y):
         x_logits = torch.nn.functional.normalize(x, dim=-1)
@@ -54,41 +55,21 @@ class InfoNCE_with_filtering:
         sim_matrix = x_logits @ y_logits.T
         return sim_matrix
 
-    # def get_idx(self, keyids):
-    #     # start_time = time.time()
-    #     keyid_idx = self.ref_df[self.ref_df['keyids'].isin(keyids)].index.to_list()
+    def get_idx(self, keyids):
+        keyid_idx = self.ref_df.index[self.ref_df['keyids'].isin(keyids)].tolist()
+        size = len(keyid_idx)
+        sim_matrix = torch.full((size, size), torch.inf)
 
-    #     # time_after_getting_keyids = time.time()
-
-    #     sim_matrix = torch.full((32, 32), torch.inf)  # Initialize with torch.inf for diagonal elements
-
-    #     for i, keyid1 in enumerate(keyid_idx):
-    #         start = (keyid1 // 75) * 75
-    #         scores_df = self.all_dfs[self.df_indices[start]]
-    #         filtered_scores = scores_df[scores_df['i'].isin(keyid_idx) & scores_df['j'].isin(keyid_idx)]
-            
-    #         # time_after_filtering_scores = time.time()
-
-    #         for _, row in filtered_scores.iterrows():
-    #             i_idx = keyid_idx.index(row['i'])
-    #             j_idx = keyid_idx.index(row['j'])
-    #             distance = row['distance']
-    #             if i_idx != j_idx:
-    #                 sim_matrix[i_idx][j_idx] = distance
-    #                 sim_matrix[j_idx][i_idx] = distance
-
-    #         # breakpoint()
-
-    #     # time_after_making_sim_matrix = time.time()
-    #     idx = torch.where(sim_matrix < 200)
-    #     # time_after_all_calculations = time.time()
-    #     # breakpoint()
-    #     return idx
+        sim_matrix = self.all_scores[torch.tensor(keyid_idx)][:, torch.tensor(keyid_idx)]
+        sim_matrix.fill_diagonal_(torch.inf)
+        idx = torch.where(sim_matrix < self.threshold_dtw)
+        return idx
 
     # def get_idx(self, keyids):
-    #     # keyids_set = set(keyids)
+    #     keyids_set = set(keyids)
     #     keyid_idx = self.ref_df.index[self.ref_df['keyids'].isin(keyids)].tolist()
-    #     sim_matrix = torch.full((32, 32), torch.inf)  # Initialize with torch.inf for diagonal elements
+    #     size = len(keyid_idx)
+    #     sim_matrix = torch.full((size, size), torch.inf)  # Initialize with torch.inf for diagonal elements
 
     #     keyid_idx_dict = {keyid: idx for idx, keyid in enumerate(keyid_idx)}
 
@@ -96,8 +77,9 @@ class InfoNCE_with_filtering:
     #         scores_df = self.all_dfs[self.df_indices[start]]
 
     #         # Filter using numpy for efficiency
-    #         i_values = scores_df['i'].values
+    #         i_values = scores_df['i'].values            # [i, j, distance]
     #         j_values = scores_df['j'].values
+    #         # NOTE: 
     #         mask = np.isin(i_values, keyid_idx) & np.isin(j_values, keyid_idx)
     #         filtered_scores = scores_df[mask]
 
@@ -105,52 +87,20 @@ class InfoNCE_with_filtering:
     #         j_array = filtered_scores['j'].values
     #         distance_array = filtered_scores['distance'].values
 
-    #         for i, j, distance in zip(i_array, j_array, distance_array):
-    #             i_idx = keyid_idx_dict.get(i)
-    #             j_idx = keyid_idx_dict.get(j)
-    #             if i_idx is not None and j_idx is not None and i_idx != j_idx:
-    #                 sim_matrix[i_idx][j_idx] = distance
-    #                 sim_matrix[j_idx][i_idx] = distance
+    #         # Cache dictionary lookups
+    #         i_indices = np.array([keyid_idx_dict.get(i) for i in i_array])
+    #         j_indices = np.array([keyid_idx_dict.get(j) for j in j_array])
 
-    #     idx = torch.where(sim_matrix < 200)
+    #         valid_mask = (i_indices != j_indices)
+    #         i_indices = i_indices[valid_mask]
+    #         j_indices = j_indices[valid_mask]
+    #         distance_array = distance_array[valid_mask]
+
+    #         sim_matrix[i_indices, j_indices] = torch.tensor(distance_array, dtype=sim_matrix.dtype)
+    #         sim_matrix[j_indices, i_indices] = torch.tensor(distance_array, dtype=sim_matrix.dtype)
+
+    #     idx = torch.where(sim_matrix < self.threshold_dtw)
     #     return idx
-
-    def get_idx(self, keyids):
-        keyids_set = set(keyids)
-        keyid_idx = self.ref_df.index[self.ref_df['keyids'].isin(keyids)].tolist()
-        size = len(keyid_idx)
-        sim_matrix = torch.full((size, size), torch.inf)  # Initialize with torch.inf for diagonal elements
-
-        keyid_idx_dict = {keyid: idx for idx, keyid in enumerate(keyid_idx)}
-
-        for start in set((keyid // 75) * 75 for keyid in keyid_idx):
-            scores_df = self.all_dfs[self.df_indices[start]]
-
-            # Filter using numpy for efficiency
-            i_values = scores_df['i'].values            # [i, j, distance]
-            j_values = scores_df['j'].values
-            # NOTE: 
-            mask = np.isin(i_values, keyid_idx) & np.isin(j_values, keyid_idx)
-            filtered_scores = scores_df[mask]
-
-            i_array = filtered_scores['i'].values
-            j_array = filtered_scores['j'].values
-            distance_array = filtered_scores['distance'].values
-
-            # Cache dictionary lookups
-            i_indices = np.array([keyid_idx_dict.get(i) for i in i_array])
-            j_indices = np.array([keyid_idx_dict.get(j) for j in j_array])
-
-            valid_mask = (i_indices != j_indices)
-            i_indices = i_indices[valid_mask]
-            j_indices = j_indices[valid_mask]
-            distance_array = distance_array[valid_mask]
-
-            sim_matrix[i_indices, j_indices] = torch.tensor(distance_array, dtype=sim_matrix.dtype)
-            sim_matrix[j_indices, i_indices] = torch.tensor(distance_array, dtype=sim_matrix.dtype)
-
-        idx = torch.where(sim_matrix < self.threshold_dtw)
-        return idx
     
     # x = text latents, y = motion latents.
     def __call__(self, x, y, keyids, sent_emb=None):
@@ -166,15 +116,9 @@ class InfoNCE_with_filtering:
             # Try implementing both with DTW scores AND with combined ranks
             # idx = torch.where(selfsim_nodiag > real_threshold_selfsim)
 
-            # pr = cProfile.Profile()
-            # pr.enable()
             start_time=time.time()
             idx = self.get_idx(keyids)
             end_time=time.time()
-            # pr.disable()
-            # s = io.StringIO()
-            # sortby = 'cumulative'
-            # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
             sim_matrix[idx] = -torch.inf
 
         labels = torch.arange(bs, device=device)
@@ -183,14 +127,13 @@ class InfoNCE_with_filtering:
             F.cross_entropy(sim_matrix, labels) + F.cross_entropy(sim_matrix.T, labels)
         ) / 2
 
-        breakpoint()
         return total_loss
 
     def __repr__(self):
         return f"Constrastive(temp={self.temp})"
 
 class DTWLoss:
-    def __init__(self, margin=0.1):        
+    def __init__(self, margin=0.15):        
         self.margin = margin
 
     def __call__(self, anchor_latent, positive_latent, negative_latent):
