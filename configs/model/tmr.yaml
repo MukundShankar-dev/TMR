@@ -11,6 +11,8 @@ lmd:
   contrastive: 0.9
   dtw: 0.9
   new_loss: 10.0
+  text_contrastive: 0.9
+  motion_contrastive: 0.9
 
 lr: 1e-4
 temperature: 0.1
