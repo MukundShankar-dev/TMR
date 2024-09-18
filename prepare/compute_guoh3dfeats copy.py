@@ -38,7 +38,8 @@ def swap_left_right(data):
 @hydra.main(
     config_path="../configs", config_name="compute_guoh3dfeats", version_base="1.3"
 )
-def compute_guoh3dfeats(cfg: DictConfig):
+def compute_new_guoh3dfeats(cfg: DictConfig):
+    # breakpoint()
     base_folder = cfg.base_folder
     output_folder = cfg.output_folder
     force_redo = cfg.force_redo
@@ -58,14 +59,15 @@ def compute_guoh3dfeats(cfg: DictConfig):
 
     for motion_path, new_motion_path in iterator:
         joints = np.load(motion_path)
-        # joints[:, 24:, :] = 0
+        joints[:, 24:, :] = 0
+
         if "humanact12" not in motion_path:
             # This is because the authors of HumanML3D
             # save the motions by swapping Y and Z (det = -1)
             # which is not a proper rotation (det = 1)
             # so we should invert x, to make it a rotation
             # that is why the authors use "data[..., 0] *= -1" inside the "if"
-            # before swapping left/right
+            # before swapping left / right
             # https://github.com/EricGuo5513/HumanML3D/blob/main/raw_pose_processing.ipynb
             joints[..., 0] *= -1
             # the humanact12 motions are normally saved correctly, no need to swap again
@@ -74,6 +76,7 @@ def compute_guoh3dfeats(cfg: DictConfig):
             # At least we are compatible with previous work :/
 
         joints_m = swap_left_right(joints)
+
 
         # apply transformation
         try:

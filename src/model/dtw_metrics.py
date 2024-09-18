@@ -77,7 +77,7 @@ def contrastive_metrics(
         matching_indices = ref_df.index[mask].tolist()
         row_dtw_scores = np.array(dtw_scores[i][matching_indices])
         try:
-            best_col = np.min(np.where(row_dtw_scores < 200)[1])
+            best_col = np.min(np.where(row_dtw_scores < 300)[1])
             if best_col < cols[i]:
                 cols[i] = best_col
         except:

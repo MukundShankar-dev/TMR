@@ -162,10 +162,8 @@ class TMR(TEMOS):
         text_x_dict = batch["text_x_dict"]
         motion_x_dict = batch["motion_x_dict"]
 
-        # breakpoint()
-
-        positive_motion_distance = batch["positive_motion_distance"]
-        positive_text_distance = batch["positive_text_distance"]
+        # positive_motion_distance = batch["positive_motion_distance"]
+        # positive_text_distance = batch["positive_text_distance"]
 
         negative_motion_distance = batch["negative_motion_distance"]        
         negative_text_distance = batch["negative_text_distance"]

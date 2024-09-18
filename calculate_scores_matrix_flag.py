@@ -3,7 +3,6 @@ import torch
 import pandas as pd
 import numpy as np
 from scipy.spatial.distance import euclidean
-# from concurrent.futures import ProcessPoolExecutor, as_completed
 import multiprocessing
 from fastdtw import fastdtw
 from tqdm import tqdm
@@ -13,11 +12,9 @@ import argparse
 from itertools import product
 import json
 
-# Total pairs: 376710076
-
-def get_df():   # 140ms per call
+def get_df():
     print("reading csv")
-    df = pd.read_csv('/vulcanscratch/mukunds/downloads/TMR_old/outputs/tmr_humanml3d_guoh3dfeats_old1/new_latents/embeddings.csv')
+    df = pd.read_csv('/vulcanscratch/mukunds/downloads/TMR/flag_ref.csv')
     print("finished reading csv")
     return df
 

@@ -11,6 +11,11 @@ comparitive_metrics
 samples_*
 dtw_scores.*
 train.*
+new_smpl_files
+logs
+motion_rendering_*
+motion_*
+flag3d_smpl_files
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

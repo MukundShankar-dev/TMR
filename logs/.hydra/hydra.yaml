@@ -117,14 +117,16 @@ hydra:
   overrides:
     hydra:
     - hydra.mode=RUN
-    task: []
+    task:
+    - base_folder=datasets/motions/flag_subset_pose_data
+    - output_folder=datasets/motions/flag_subset_guoh3dfeats
   job:
-    name: retrieval
+    name: compute_guoh3dfeats
     chdir: null
-    override_dirname: ''
+    override_dirname: base_folder=datasets/motions/flag_subset_pose_data,output_folder=datasets/motions/flag_subset_guoh3dfeats
     id: ???
     num: ???
-    config_name: retrieval
+    config_name: compute_guoh3dfeats
     env_set: {}
     env_copy: []
     config:
