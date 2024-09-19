@@ -38,29 +38,18 @@ def all_pairs(df):      # 6m14 per call
     print("finished generating pair list")
     return pairs_lst
 
-def calculate_pair_distance(pair, df, annotations):      # 26ms per call
-    # print('in calculate fn')
+def calculate_pair_distance(pair, df):      # 26ms per call
     fps = 20.0
     i, j = pair
-    base_path = 'datasets/motions/guoh3dfeats/'
+    # base_path = `motions/guoh3dfeats/'
 
     # print('getting keyids')
     motion_1_keyid = df.iloc[pair[0]]['keyids']
     motion_2_keyid = df.iloc[pair[1]]['keyids']
 
-    # print('getting start/end times')
-    motion_1_start = int(annotations[motion_1_keyid]["annotations"][0]["start"] * fps)
-    motion_1_end = int(annotations[motion_1_keyid]["annotations"][0]["end"] * fps)
-    motion_2_start = int(annotations[motion_2_keyid]["annotations"][0]["start"] * fps)
-    motion_2_end = int(annotations[motion_2_keyid]["annotations"][0]["end"] * fps)
-
     # print('loading motions in')
-    motion_1 = np.load(f"{base_path}{((df.iloc[pair[0]])['motion path'])}.npy")
-    motion_2 = np.load(f"{base_path}{((df.iloc[pair[1]])['motion path'])}.npy")
-
-    # print('slicing motions')
-    motion_1 = motion_1[motion_1_start:motion_1_end]
-    motion_2 = motion_2[motion_2_start:motion_2_end]
+    motion_1 = np.load(f"{((df.iloc[pair[0]])['motion path'])}")
+    motion_2 = np.load(f"{((df.iloc[pair[1]])['motion path'])}")
 
     # print('Using fastdtw on motions afer slicing')
     distance, _ = fastdtw(motion_1, motion_2,dist=euclidean)
@@ -68,28 +57,22 @@ def calculate_pair_distance(pair, df, annotations):      # 26ms per call
     # print('returning')
     return i, j, distance
 
-def worker_function(pairs_chunk, df, annotations, results):
+def worker_function(pairs_chunk, df, results):
     for pair in pairs_chunk:
-        _, _, distance = calculate_pair_distance(pair, df, annotations)
+        _, _, distance = calculate_pair_distance(pair, df)
         results.append((pair[0], pair[1], distance))
 
 def calculate_scores(all_pairs, df, num_cores):
-    counter = 0
     chunk_size = len(all_pairs) // num_cores
     chunks = [all_pairs[i:i + chunk_size] for i in range(0, len(all_pairs), chunk_size)]
 
     results_queue = multiprocessing.Queue()
 
-    print('reading json')
-    with open('datasets/annotations/humanml3d/annotations.json') as f:
-        annotations = json.load(f)
-    print('finished reading json')
-
     with multiprocessing.Manager() as manager:
         results = manager.list()
         
         with multiprocessing.Pool(processes=num_cores) as pool:
-            pool.starmap(worker_function, [(chunk, df, annotations, results) for chunk in chunks])
+            pool.starmap(worker_function, [(chunk, df, results) for chunk in chunks])
 
         print('converting results to list')
         results_list = list(results)
@@ -100,7 +83,7 @@ def calculate_scores(all_pairs, df, num_cores):
 
 if __name__ =='__main__':
     print('in main')
-    BASE_DUMP_DIR = 'dtw_scores/'
+    BASE_DUMP_DIR = 'flag_dtw_scores/'
     print('parsing')
     parser = argparse.ArgumentParser(description='Takes in the number of cores to use. The first [i] available cores will be used')
     parser.add_argument('--num_cores', type=int, help='number of cores to use')

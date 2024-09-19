@@ -17,10 +17,7 @@ qos_dict = {"sailon" : {"nhrs" : 2, "cores": 16, "mem":128},
             "default" : {"gpu":1, "cores": 4, "mem":32, "nhrs": 168},
             "tron" : {"gpu":1, "cores": 4, "mem":32, "nhrs": 168}}
 
-
-
 def check_qos(args):
-    
     for key, max_value in qos_dict[args.qos].items():
         val_from_args = getattr(args, key)
         if val_from_args != None:
@@ -29,7 +26,6 @@ def check_qos(args):
         else:
             setattr(args, key, max_value)
     return args
-
 
 #TODO: Add day funtionality too 
 parser = argparse.ArgumentParser()
@@ -42,9 +38,9 @@ parser.add_argument('--explore', action='store_true')
 
 
 parser.add_argument('--qos', default="scav", type=str, help='Qos to run')
-parser.add_argument('--env', default="train_logs", type=str, help = "Set the name of the dir you want to dump")
+parser.add_argument('--env', default="flag_dtw", type=str, help = "Set the name of the dir you want to dump")
 parser.add_argument('--gpu', default=1, type=int, help='Number of gpus')
-parser.add_argument('--cores', default=8, type=int, help='Number of cpu cores')
+parser.add_argument('--cores', default=16, type=int, help='Number of cpu cores')
 parser.add_argument('--mem', default=32, type=int, help='RAM in G')
 parser.add_argument('--gpu_type', default='none', type=str, help='RAM in G')
 
@@ -74,7 +70,9 @@ print("Output Directory: %s" % output_dir)
 
 # params = [(2, 5), (5, 8), (10, 13)]
 
-params = [50, 100, 200, 300, 400, 500]
+# params = [50, 100, 200, 300, 400, 500]
+
+params = list(range(2000, 7200, 100))
 
 pca = True              
 temporal_skip = None
@@ -84,6 +82,18 @@ with open(f'{args.base_dir}/output/{args.env}/now.txt', "w") as nowfile,\
      open(f'{args.base_dir}/output/{args.env}/err.txt', "w") as error_namefile,\
      open(f'{args.base_dir}/output/{args.env}/name.txt', "w") as namefile:
     
+    for start_idx in params:
+        now = datetime.now()
+        datetimestr = now.strftime("%m%d_%H%M:%S.%f")
+
+        name = f"start_idx_{start_idx}"
+
+        cmd = f'python calculate_scores_matrix_flag.py --num_cores {args.cores} --start_idx {start_idx} --per_job_ids 100'
+        nowfile.write(f'{cmd}\n')
+        namefile.write(f'{(os.path.join(output_dir, name))}.log\n')
+        output_namefile.write(f'{(os.path.join(output_dir, name))}_log.txt\n')
+        error_namefile.write(f'{(os.path.join(output_dir, name))}_error.txt\n')
+
     # NOTE: if using both losses, to jointly tune both
     # for lmd_contrastive, lmd_dtw in params:
     #     now = datetime.now()
@@ -158,25 +168,25 @@ with open(f'{args.base_dir}/output/{args.env}/now.txt', "w") as nowfile,\
     #     output_namefile.write(f'{(os.path.join(output_dir, name))}_log.txt\n')
     #     error_namefile.write(f'{(os.path.join(output_dir, name))}_error.txt\n')
 
-    for dtw_thresh in params:
-        now = datetime.now()
-        datetimestr = now.strftime("%m%d_%H%M:%S.%f")
+    # NOTE: to play with DTW thresholds
+    # for dtw_thresh in params:
+    #     now = datetime.now()
+    #     datetimestr = now.strftime("%m%d_%H%M:%S.%f")
 
-        name = f'dtw_threshold_{dtw_thresh}'
-        cmd = f'python train.py run_dir=outputs/dtw_threshold_{dtw_thresh} '
-        cmd += f'model.run_dir=outputs/dtw_threshold_{dtw_thresh} '
-        cmd += f'model.lmd.dtw=0.9 model.lmd.contrastive=0.9 model.dtw_loss_type=\"cosine\" '
-        cmd += f'model.use_dtw=True model.dtw_margin=0.15 model.wandb_name={name} model.use_contrastive=False '
-        cmd += f'lower=10 upper=13 threshold_dtw={dtw_thresh}'
-        nowfile.write(f'{cmd}\n')
-        namefile.write(f'{(os.path.join(output_dir, name))}.log\n')
-        output_namefile.write(f'{(os.path.join(output_dir, name))}_log.txt\n')
-        error_namefile.write(f'{(os.path.join(output_dir, name))}_error.txt\n')
+    #     name = f'dtw_threshold_{dtw_thresh}'
+    #     cmd = f'python train.py run_dir=outputs/dtw_threshold_{dtw_thresh} '
+    #     cmd += f'model.run_dir=outputs/dtw_threshold_{dtw_thresh} '
+    #     cmd += f'model.lmd.dtw=0.9 model.lmd.contrastive=0.9 model.dtw_loss_type=\"cosine\" '
+    #     cmd += f'model.use_dtw=True model.dtw_margin=0.15 model.wandb_name={name} model.use_contrastive=False '
+    #     cmd += f'lower=10 upper=13 threshold_dtw={dtw_thresh}'
+    #     nowfile.write(f'{cmd}\n')
+    #     namefile.write(f'{(os.path.join(output_dir, name))}.log\n')
+    #     output_namefile.write(f'{(os.path.join(output_dir, name))}_log.txt\n')
+    #     error_namefile.write(f'{(os.path.join(output_dir, name))}_error.txt\n')
 
 ###########################################################################
 # Make a {name}.slurm file in the {output_dir} which defines this job.
 #slurm_script_path = os.path.join(output_dir, '%s.slurm' % name)
-
 
 start=1
 slurm_script_path = os.path.join(output_dir, f'dtw.slurm')

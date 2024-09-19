@@ -16,6 +16,7 @@ logs
 motion_rendering_*
 motion_*
 flag3d_smpl_files
+flag_dtw_scores
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
