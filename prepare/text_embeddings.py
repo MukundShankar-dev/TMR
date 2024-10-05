@@ -15,13 +15,15 @@ def text_embeddings(cfg: DictConfig):
     # Compute token embeddings
     modelname = cfg.data.text_to_token_emb.modelname
     logger.info(f"Compute token embeddings for {modelname}")
-    path = cfg.data.text_to_token_emb.path
+    # path = cfg.data.text_to_token_emb.path
+    path = "datasets/annotations/flag3d"
     save_token_embeddings(path, modelname=modelname, device=device)
 
     # Compute sent embeddings
     modelname = cfg.data.text_to_sent_emb.modelname
     logger.info(f"Compute sentence embeddings for {modelname}")
-    path = cfg.data.text_to_sent_emb.path
+    # path = cfg.data.text_to_sent_emb.path
+    path = "datasets/annotations/flag3d"
     save_sent_embeddings(path, modelname=modelname, device=device)
 
 

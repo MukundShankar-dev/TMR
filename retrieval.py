@@ -26,6 +26,7 @@ def compute_sim_matrix(model, dataset, keyids, batch_size=256):
     nsplit = int(np.ceil(len(dataset) / batch_size))
     with torch.inference_mode():
         all_data = [dataset.load_keyid(keyid) for keyid in keyids]
+        breakpoint()
         all_data_splitted = np.array_split(all_data, nsplit)
 
         # by batch (can be too costly on cuda device otherwise)
@@ -39,6 +40,8 @@ def compute_sim_matrix(model, dataset, keyids, batch_size=256):
             text_x_dict = batch["text_x_dict"]
             motion_x_dict = batch["motion_x_dict"]
             sent_emb = batch["sent_emb"]
+
+            breakpoint()
 
             # Encode both motion and text
             latent_text = model.encode(text_x_dict, sample_mean=True)
@@ -113,6 +116,7 @@ def retrieval(newcfg: DictConfig) -> None:
         # Compute sim_matrix for each protocol
         if protocol not in results:
             if protocol in ["normal", "threshold"]:
+                breakpoint()
                 res = compute_sim_matrix(
                     model, dataset, dataset.keyids, batch_size=batch_size
                 )

@@ -72,7 +72,7 @@ print("Output Directory: %s" % output_dir)
 
 # params = [50, 100, 200, 300, 400, 500]
 
-params = list(range(2000, 7200, 100))
+params = list(range(0, 7200, 100))
 
 pca = True              
 temporal_skip = None
@@ -83,6 +83,8 @@ with open(f'{args.base_dir}/output/{args.env}/now.txt', "w") as nowfile,\
      open(f'{args.base_dir}/output/{args.env}/name.txt', "w") as namefile:
     
     for start_idx in params:
+        if os.path.isfile(f'flag_dtw_scores/all_dtw_{start_idx}_{start_idx+100}.csv'):
+            continue
         now = datetime.now()
         datetimestr = now.strftime("%m%d_%H%M:%S.%f")
 

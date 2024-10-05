@@ -145,6 +145,8 @@ def load_annotations(path, name="annotations.json"):
     json_path = os.path.join(path, name)
     return load_json(json_path)
 
+def load_flag_annotations(name="flag_action_annotations.json"):
+    return load_json(name)
 
 def write_json(data, path):
     with open(path, "w") as ff:
@@ -156,6 +158,7 @@ def save_token_embeddings(
 ):
     model = TextToEmb(modelname, device=device)
     annotations = load_annotations(path)
+    # annotations = load_flag_annotations()
 
     path = os.path.join(path, TokenEmbeddings.name)
     ptpath = os.path.join(path, f"{modelname}.npy")
@@ -171,6 +174,9 @@ def save_token_embeddings(
     for dico in annotations.values():
         for lst in dico["annotations"]:
             all_texts.append(lst["text"])
+    
+    # for annot in annotations.values():
+        # all_texts.append(annot)
 
     # remove duplicates
     all_texts = list(set(all_texts))
@@ -178,6 +184,7 @@ def save_token_embeddings(
     # batch of N/10
     nb_tokens = []
     all_texts_batched = np.array_split(all_texts, 100)
+    # all_texts_batched = np.array_split(all_texts, 60)
 
     nb_tokens_so_far = 0
     big_tensor = []
@@ -223,6 +230,7 @@ def save_sent_embeddings(
 ):
     model = TextToEmb(modelname, mean_pooling=True, device=device)
     annotations = load_annotations(path)
+    # annotations = load_flag_annotations()
 
     path = os.path.join(path, SentenceEmbeddings.name)
     ptpath = os.path.join(path, f"{modelname}.npy")
@@ -237,12 +245,16 @@ def save_sent_embeddings(
     for dico in annotations.values():
         for lst in dico["annotations"]:
             all_texts.append(lst["text"])
+    
+    # for annot in annotations.values():
+    #     all_texts.append(annot)
 
     # remove duplicates
     all_texts = list(set(all_texts))
 
     # batch of N/10
     all_texts_batched = np.array_split(all_texts, 100)
+    # all_texts_batched = np.array_split(all_texts, 60)
     embeddings = []
     for all_texts_batch in tqdm(all_texts_batched):
         embedding = model(list(all_texts_batch)).cpu()

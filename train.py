@@ -31,6 +31,8 @@ def train(cfg: DictConfig):
     train_dataset = instantiate(cfg.data, split="train", lower_neg_sample=cfg.lower, upper_neg_sample=cfg.upper)
     val_dataset = instantiate(cfg.data, split="val", lower_neg_sample=cfg.lower, upper_neg_sample=cfg.upper)
 
+    breakpoint()
+
     train_dataloader = instantiate(
         cfg.dataloader,
         dataset=train_dataset,
@@ -44,6 +46,8 @@ def train(cfg: DictConfig):
         collate_fn=val_dataset.collate_fn,
         shuffle=False,
     )
+
+    breakpoint()
 
     logger.info("Loading the model")
     model = instantiate(cfg.model)

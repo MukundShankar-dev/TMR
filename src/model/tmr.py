@@ -121,11 +121,14 @@ class TMR(TEMOS):
 
         # adding the contrastive loss
         if self.use_contrastive:
-            self.text_contrastive_loss_fn = InfoNCE_with_filtering(
-                temperature=temperature, threshold_selfsim=threshold_selfsim, threshold_dtw=threshold_dtw, mode="text"
-            )
-            self.motion_contrastive_loss_fn = InfoNCE_with_filtering(
-                temperature=temperature, threshold_selfsim=threshold_selfsim, threshold_dtw=threshold_dtw, mode="motion"
+            # self.text_contrastive_loss_fn = InfoNCE_with_filtering(
+            #     temperature=temperature, threshold_selfsim=threshold_selfsim, threshold_dtw=threshold_dtw, mode="text"
+            # )
+            # self.motion_contrastive_loss_fn = InfoNCE_with_filtering(
+            #     temperature=temperature, threshold_selfsim=threshold_selfsim, threshold_dtw=threshold_dtw, mode="motion"
+            # )
+            self.contrastive_loss_fn = InfoNCE_with_filtering(
+                temperature=temperature, threshold_selfsim=threshold_selfsim
             )
 
         self.threshold_selfsim_metrics = threshold_selfsim_metrics
@@ -146,17 +149,17 @@ class TMR(TEMOS):
 
         cfg = read_config("/vulcanscratch/mukunds/downloads/TMR/old_outputs/tmr_humanml3d_guoh3dfeats_vanilla_model")
 
-        self.val_datasets = {}
-        self.protocols = ["normal", "threshold", "guo", "nsim"]
-        for protocol in self.protocols:
-            if protocol not in self.val_datasets:
-                if protocol in ["normal", "threshold", "guo"]:
-                    dataset = instantiate(cfg.data, split="test")
-                    self.val_datasets.update(
-                        {key: dataset for key in ["normal", "threshold", "guo"]}
-                    )
-                elif protocol == "nsim":
-                    self.val_datasets[protocol] = instantiate(cfg.data, split="nsim_test")
+        # self.val_datasets = {}
+        # self.protocols = ["normal", "threshold", "guo", "nsim"]
+        # for protocol in self.protocols:
+        #     if protocol not in self.val_datasets:
+        #         if protocol in ["normal", "threshold", "guo"]:
+        #             dataset = instantiate(cfg.data, split="test")
+        #             self.val_datasets.update(
+        #                 {key: dataset for key in ["normal", "threshold", "guo"]}
+        #             )
+        #         elif protocol == "nsim":
+        #             self.val_datasets[protocol] = instantiate(cfg.data, split="nsim_test")
 
     def compute_loss(self, batch: Dict, return_all=False) -> Dict:
         text_x_dict = batch["text_x_dict"]
@@ -165,14 +168,15 @@ class TMR(TEMOS):
         # positive_motion_distance = batch["positive_motion_distance"]
         # positive_text_distance = batch["positive_text_distance"]
 
-        negative_motion_distance = batch["negative_motion_distance"]        
-        negative_text_distance = batch["negative_text_distance"]
+        if self.use_dtw:
+            negative_motion_distance = batch["negative_motion_distance"]        
+            negative_text_distance = batch["negative_text_distance"]
 
-        positive_sample_x_dict = batch["positive_sample_x_dict"]
-        pos_mask = positive_sample_x_dict["mask"]
+            positive_sample_x_dict = batch["positive_sample_x_dict"]
+            pos_mask = positive_sample_x_dict["mask"]
 
-        negative_sample_x_dict = batch["negative_sample_x_dict"]
-        neg_mask = negative_sample_x_dict["mask"]
+            negative_sample_x_dict = batch["negative_sample_x_dict"]
+            neg_mask = negative_sample_x_dict["mask"]
 
         mask = motion_x_dict["mask"]
         ref_motions = motion_x_dict["x"]
@@ -186,8 +190,9 @@ class TMR(TEMOS):
         # motion -> motion
         m_motions, m_latents, m_dists = self(motion_x_dict, mask=mask, return_all=True)
 
-        _, pos_latents, _ = self(positive_sample_x_dict, mask=pos_mask, return_all=True)
-        _, neg_latents, _ = self(negative_sample_x_dict, mask=neg_mask, return_all=True)
+        if self.use_dtw:
+            _, pos_latents, _ = self(positive_sample_x_dict, mask=pos_mask, return_all=True)
+            _, neg_latents, _ = self(negative_sample_x_dict, mask=neg_mask, return_all=True)
 
         # Store all losses
         losses = {}
@@ -221,9 +226,9 @@ class TMR(TEMOS):
         # TMR: adding the contrastive loss
         # NOTE no contrastive loss
         if self.use_contrastive:
-            # losses["contrastive"] = self.contrastive_loss_fn(t_latents, m_latents, sent_emb)
-            losses["text_contrastive"] = self.text_contrastive_loss_fn(t_latents, m_latents, batch['keyid'], sent_emb)
-            losses["motion_contrastive"] = self.motion_contrastive_loss_fn(t_latents, m_latents, batch['keyid'], sent_emb)
+            losses["contrastive"] = self.contrastive_loss_fn(t_latents, m_latents, sent_emb)
+            # losses["text_contrastive"] = self.text_contrastive_loss_fn(t_latents, m_latents, batch['keyid'], sent_emb)
+            # losses["motion_contrastive"] = self.motion_contrastive_loss_fn(t_latents, m_latents, batch['keyid'], sent_emb)
             # losses["contrastive"] = self.contrastive_loss_fn(t_latents, pos_latents, sent_emb)
 
         if self.use_dtw:
@@ -347,73 +352,73 @@ class TMR(TEMOS):
         batch_size = 256
         results = {}
         metrics_to_log = {}
-        for protocol in self.protocols:
-            dataset = self.val_datasets[protocol]
-            if protocol not in results:
-                if protocol in ["normal", "threshold"]:
-                    res = self.compute_sim_matrix(
-                    dataset, dataset.keyids, batch_size=batch_size
-                    )
-                    results.update({key: res for key in ["normal", "threshold"]})
-                elif protocol == "nsim":
-                    res = self.compute_sim_matrix(
-                        dataset, dataset.keyids, batch_size=batch_size
-                    )
-                    results[protocol] = res
-                elif protocol == "guo":
-                    keyids = sorted(dataset.keyids)
-                    N = len(keyids)
+        # for protocol in self.protocols:
+        #     dataset = self.val_datasets[protocol]
+        #     if protocol not in results:
+        #         if protocol in ["normal", "threshold"]:
+        #             res = self.compute_sim_matrix(
+        #             dataset, dataset.keyids, batch_size=batch_size
+        #             )
+        #             results.update({key: res for key in ["normal", "threshold"]})
+        #         elif protocol == "nsim":
+        #             res = self.compute_sim_matrix(
+        #                 dataset, dataset.keyids, batch_size=batch_size
+        #             )
+        #             results[protocol] = res
+        #         elif protocol == "guo":
+        #             keyids = sorted(dataset.keyids)
+        #             N = len(keyids)
 
-                    # make batches of 32
-                    idx = np.arange(N)
-                    np.random.seed(0)
-                    np.random.shuffle(idx)
-                    idx_batches = [
-                        idx[32 * i : 32 * (i + 1)] for i in range(len(keyids) // 32)
-                    ]
+        #             # make batches of 32
+        #             idx = np.arange(N)
+        #             np.random.seed(0)
+        #             np.random.shuffle(idx)
+        #             idx_batches = [
+        #                 idx[32 * i : 32 * (i + 1)] for i in range(len(keyids) // 32)
+        #             ]
 
-                    # split into batches of 32
-                    # batched_keyids = [ [32], [32], [...]]
-                    results["guo"] = [
-                        self.compute_sim_matrix(
-                            dataset,
-                            np.array(keyids)[idx_batch],
-                            batch_size=batch_size,
-                        )
-                        for idx_batch in idx_batches
-                    ]
-            result = results[protocol]
+        #             # split into batches of 32
+        #             # batched_keyids = [ [32], [32], [...]]
+        #             results["guo"] = [
+        #                 self.compute_sim_matrix(
+        #                     dataset,
+        #                     np.array(keyids)[idx_batch],
+        #                     batch_size=batch_size,
+        #                 )
+        #                 for idx_batch in idx_batches
+        #             ]
+        #     result = results[protocol]
 
-            if protocol == "guo":
-                all_metrics = []
-                for x in result:
-                    sim_matrix = x["sim_matrix"]
-                    metrics = all_contrastive_metrics(sim_matrix, rounding=None)
-                    all_metrics.append(metrics)
+        #     if protocol == "guo":
+        #         all_metrics = []
+        #         for x in result:
+        #             sim_matrix = x["sim_matrix"]
+        #             metrics = all_contrastive_metrics(sim_matrix, rounding=None)
+        #             all_metrics.append(metrics)
 
-                avg_metrics = {}
-                for key in all_metrics[0].keys():
-                    avg_metrics[key] = round(
-                        float(np.mean([metrics[key] for metrics in all_metrics])), 2
-                    )
+        #         avg_metrics = {}
+        #         for key in all_metrics[0].keys():
+        #             avg_metrics[key] = round(
+        #                 float(np.mean([metrics[key] for metrics in all_metrics])), 2
+        #             )
 
-                metrics = avg_metrics
-                protocol_name = protocol
-            else:
-                sim_matrix = result["sim_matrix"]
+        #         metrics = avg_metrics
+        #         protocol_name = protocol
+        #     else:
+        #         sim_matrix = result["sim_matrix"]
 
-                protocol_name = protocol
-                if protocol == "threshold":
-                    emb = result["sent_emb"]
-                    threshold = 0.95
-                    protocol_name = protocol + f"_{threshold}"
-                else:
-                    emb, threshold = None, None
-                metrics = all_contrastive_metrics(sim_matrix, emb, threshold=threshold)
+        #         protocol_name = protocol
+        #         if protocol == "threshold":
+        #             emb = result["sent_emb"]
+        #             threshold = 0.95
+        #             protocol_name = protocol + f"_{threshold}"
+        #         else:
+        #             emb, threshold = None, None
+        #         metrics = all_contrastive_metrics(sim_matrix, emb, threshold=threshold)
 
-            metrics_to_log[protocol] = metrics
+        #     metrics_to_log[protocol] = metrics
         
-        if self.log_wandb:
-            wandb.log(metrics_to_log)
+        # if self.log_wandb:
+        #     wandb.log(metrics_to_log)
         
         return

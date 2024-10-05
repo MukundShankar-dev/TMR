@@ -117,16 +117,14 @@ hydra:
   overrides:
     hydra:
     - hydra.mode=RUN
-    task:
-    - base_folder=datasets/motions/flag_subset_pose_data
-    - output_folder=datasets/motions/flag_subset_guoh3dfeats
+    task: []
   job:
-    name: compute_guoh3dfeats
+    name: text_embeddings
     chdir: null
-    override_dirname: base_folder=datasets/motions/flag_subset_pose_data,output_folder=datasets/motions/flag_subset_guoh3dfeats
+    override_dirname: ''
     id: ???
     num: ???
-    config_name: compute_guoh3dfeats
+    config_name: text_embeddings
     env_set: {}
     env_copy: []
     config:
@@ -153,6 +151,8 @@ hydra:
       provider: schema
     output_dir: /vulcanscratch/mukunds/downloads/TMR/logs
     choices:
+      data: humanml3d
+      data/motion_loader: guoh3dfeats
       hydra/env: default
       hydra/callbacks: null
       hydra/job_logging: tqdm

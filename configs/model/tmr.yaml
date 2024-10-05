@@ -20,9 +20,9 @@ threshold_selfsim: 0.80
 threshold_dtw: 200
 threshold_selfsim_metrics: 0.95
 log_wandb: True
-use_dtw: True
-use_contrastive: False
+use_dtw: False
+use_contrastive: True
 dtw_loss_type: "cosine"
 dtw_margin: 0.15
-wandb_name: "adjusted_scores"
-run_dir: tmr_humanml3d_guoh3dfeats
+wandb_name: "flag_data_run"
+run_dir: flag_data_run

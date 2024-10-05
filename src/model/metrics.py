@@ -61,11 +61,13 @@ def contrastive_metrics(
     num_queries = n
 
     dists = -sims
+    # dists = dists.cpu().numpy()
     sorted_dists = np.sort(dists, axis=1)
     # GT is in the diagonal
     gt_dists = np.diag(dists)[:, None]
 
     if text_selfsim is not None and threshold is not None:
+        # text_selfsim = text_selfsim.cpu().numpy()
         real_threshold = 2 * threshold - 1
         idx = np.argwhere(text_selfsim > real_threshold)
         partition = np.unique(idx[:, 0], return_index=True)[1]
@@ -128,4 +130,4 @@ def cols2metrics(cols, num_queries, rounding=2):
     if rounding is not None:
         for key in metrics:
             metrics[key] = round(metrics[key], rounding)
-    return metrics
+    return metr

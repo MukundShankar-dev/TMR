@@ -41,7 +41,6 @@ def collate_x_dict(lst_x_dict: List, *, device: Optional[str] = None) -> Dict:
     batch = {"x": x, "length": length, "mask": mask}
     return batch
 
-
 def collate_text_motion(lst_elements: List, *, device: Optional[str] = None) -> Dict:
     one_el = lst_elements[0]
     keys = one_el.keys()
