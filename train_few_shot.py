@@ -61,21 +61,22 @@ logger = logging.getLogger(__name__)
 @hydra.main(config_path="configs", config_name="train", version_base="1.3")
 def train(cfg: DictConfig):
     mp.set_start_method('spawn', force=True)
-    ckpt = None
 
-    # cfg = read_config("outputs/flag_few_shot_test")
+    # cfg = read_config("outputs/")
+    # ckpt = "last"
+    ckpt = None
 
     import src.prepare  # noqa
 
     pl.seed_everything(cfg.seed)
 
     print("Loading the datasets")
-    train_dataset = FlagDataSet("train")
+    train_dataset = FlagDataSet("test")
     val_dataset = FlagDataSet("val")
 
     print("Loading the dataloaders")
-    train_dataloader = DataLoader(train_dataset, batch_size=8, num_workers=7, shuffle=True, collate_fn=collate_text_motion, persistent_workers=True)
-    val_dataloader = DataLoader(val_dataset, batch_size=8, num_workers=7, shuffle=False, collate_fn=collate_text_motion, persistent_workers=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=16, num_workers=7, shuffle=True, collate_fn=collate_text_motion, persistent_workers=True)
+    val_dataloader = DataLoader(val_dataset, batch_size=16, num_workers=7, shuffle=False, collate_fn=collate_text_motion, persistent_workers=True)
 
     print("Resuming training")
     logger.info("Resuming training")

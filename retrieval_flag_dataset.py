@@ -31,6 +31,7 @@ def load_flag_motions():
     token_annot_slice = np.load('datasets/annotations/flag3d/token_embeddings/distilbert-base-uncased_slice.npy')
     all_token_annotations = np.load('datasets/annotations/flag3d/token_embeddings/distilbert-base-uncased.npy')
 
+    keyids = keyids = []
     for i, row in tqdm(ref_df.iterrows(), desc="Loading flag motions"):
         # if i >= 0:
             # if i < 3600:
@@ -45,20 +46,21 @@ def load_flag_motions():
             token_begin, token_end = token_annot_slice[token_annot_idx[action_annotation]]
             text_x_dict = {"x": torch.from_numpy(all_token_annotations[token_begin:token_end]).to(torch.float).to(device), "length": token_end - token_begin}
             all_data.append({"motion_x_dict": motion_x_dict, "sent_emb": sent_emb, "text_x_dict": text_x_dict})
-            # else:
-                # break
-    return all_data
+            keyids.append(row['keyids'])
+
+    return all_data, keyids
 
 if __name__ == '__main__':
-    all_data = load_flag_motions()
+    all_data, keyids = load_flag_motions()
     all_metrics = []
     batch_size = 256
     nsplit = len(all_data) // batch_size
     all_data_splitted = np.array_split(all_data, nsplit)
+    keyids_splitted = np.array_split(keyids, nsplit)
 
-    cfg = read_config("outputs/flag_few_shot_test")
+    cfg = read_config("outputs/flag_vanilla_run")
     cfg["use_wandb"] = False
-    ckpt_name = "last-v1"
+    ckpt_name = "last"
     device = "cuda"
     model = load_model_from_cfg(cfg, ckpt_name, eval_mode=True, device=device)
 
@@ -67,7 +69,7 @@ if __name__ == '__main__':
     sent_embs = []
 
     with torch.inference_mode():
-        for data in tqdm(all_data_splitted, desc="Calculating metrics"):
+        for data in tqdm(all_data_splitted, desc="Fetching latent texts and motions"):
             # print("batch.")
             # print("getting batch.")
             batch = collate_text_motion(data, device=model.device)
@@ -96,9 +98,11 @@ if __name__ == '__main__':
         # sim_matrix, sent_embs = get_latent_text_motion(motion_batches[i], token_embd_batches[i], sent_embds_batches[i])
         normal_metrics = all_contrastive_metrics(sim_matrix, None, threshold=None)
         all_metrics.append(normal_metrics)
+        breakpoint()
 
         threshold_metrics = all_contrastive_metrics(sim_matrix, sent_embs, threshold=0.95)
         all_metrics.append(threshold_metrics)
 
-    save_metric("flag_normal.yaml", normal_metrics)
-    save_metric("flag_threshold.yaml", threshold_metrics)
+    breakpoint()
+    # save_metric("flag_normal.yaml", normal_metrics)
+    # save_metric("flag_threshold.yaml", threshold_metrics)
