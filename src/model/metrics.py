@@ -55,7 +55,7 @@ def contrastive_metrics(
     threshold=None,
     return_cols=False,
     rounding=2,
-    break_ties="averaging",
+    break_ties="optimistically",
 ):
     n, m = sims.shape
     assert n == m
@@ -64,7 +64,7 @@ def contrastive_metrics(
     dists = -sims
     dists = dists.cpu().numpy()
     sorted_dists = np.sort(dists, axis=1)
-    breakpoint()
+    # breakpoint()
     # GT is in the diagonal
     gt_dists = np.diag(dists)[:, None]
 
@@ -78,7 +78,6 @@ def contrastive_metrics(
         gt_dists = gt_dists[:, None]
 
     rows, cols = np.where((sorted_dists - gt_dists) == 0)  # find column position of GT
-
     # if there are ties
     if rows.size > num_queries:
         assert np.unique(rows).size == num_queries, "issue in metric evaluation"

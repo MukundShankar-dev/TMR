@@ -58,9 +58,10 @@ if __name__ == '__main__':
     all_data_splitted = np.array_split(all_data, nsplit)
     keyids_splitted = np.array_split(keyids, nsplit)
 
-    cfg = read_config("outputs/flag_vanilla_run")
+    cfg = read_config("outputs/few_shot_test_dtw_2")
     cfg["use_wandb"] = False
-    ckpt_name = "last"
+    ckpt_name = "latest-epoch=589-v1"
+    print(f"ckpt name: {ckpt_name}")
     device = "cuda"
     model = load_model_from_cfg(cfg, ckpt_name, eval_mode=True, device=device)
 
@@ -70,6 +71,7 @@ if __name__ == '__main__':
 
     with torch.inference_mode():
         for data in tqdm(all_data_splitted, desc="Fetching latent texts and motions"):
+            # breakpoint()
             # print("batch.")
             # print("getting batch.")
             batch = collate_text_motion(data, device=model.device)
@@ -98,11 +100,11 @@ if __name__ == '__main__':
         # sim_matrix, sent_embs = get_latent_text_motion(motion_batches[i], token_embd_batches[i], sent_embds_batches[i])
         normal_metrics = all_contrastive_metrics(sim_matrix, None, threshold=None)
         all_metrics.append(normal_metrics)
-        breakpoint()
+        # breakpoint()
 
         threshold_metrics = all_contrastive_metrics(sim_matrix, sent_embs, threshold=0.95)
         all_metrics.append(threshold_metrics)
 
-    breakpoint()
-    # save_metric("flag_normal.yaml", normal_metrics)
-    # save_metric("flag_threshold.yaml", threshold_metrics)
+    # breakpoint()
+    save_metric("flag_normal.yaml", normal_metrics)
+    save_metric("flag_threshold.yaml", threshold_metrics)

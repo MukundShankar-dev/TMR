@@ -51,8 +51,11 @@ def calculate_pair_distance(pair, df):      # 26ms per call
     motion_1 = np.load(f"{((df.iloc[pair[0]])['motion path'])}")
     motion_2 = np.load(f"{((df.iloc[pair[1]])['motion path'])}")
 
+    motion_1_flattened = motion_1.reshape(motion_1.shape[0], -1)
+    motion_2_flattened = motion_2.reshape(motion_2.shape[0], -1)
+
     # print('Using fastdtw on motions afer slicing')
-    distance, _ = fastdtw(motion_1, motion_2,dist=euclidean)
+    distance, _ = fastdtw(motion_1_flattened, motion_2_flattened,dist=euclidean)
 
     # print('returning')
     return i, j, distance
